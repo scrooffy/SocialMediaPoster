@@ -4,7 +4,8 @@ from sender.sender_abs import Sender
 
 
 class VkSender(Sender):
-    # https://oauth.vk.com/authorize?client_id=51692513&redirect_uri=https://api.vk.com/blank.html&scope=offline,wall,photos,video&response_type=token
+    # Generate token link
+    # https://oauth.vk.com/authorize?client_id=<app_id>&redirect_uri=https://api.vk.com/blank.html&scope=offline,wall,photos,video&response_type=token
     def __init__(self, token, group_id):
         self.token = token
         self.group_id = group_id
