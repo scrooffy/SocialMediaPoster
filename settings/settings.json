@@ -1,0 +1,18 @@
+{
+  "telegram": {
+      "bot_token": "",
+      "chat_id": "",
+      "group_name": "name of group for link making"
+    },
+  "vk": {
+      "token": "",
+      "group_id": ""
+    },
+  "ok": {
+    "access_token": "",
+    "application_key": "",
+    "application_secret_key": "",
+    "session_secret_key": "do not need",
+    "group_id": ""
+  }
+}
