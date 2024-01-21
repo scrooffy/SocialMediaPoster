@@ -1,6 +1,6 @@
 import json
 from ok_api import OkApi, Upload
-from sender.sender_abs import Sender
+from sender.sender import Sender
 
 
 class OkSender(Sender):
@@ -20,6 +20,8 @@ class OkSender(Sender):
 
     async def send_article(self, title='', text='', photos=None, videos=None):
         await super().send_article(title=title, text=text, photos=photos, videos=videos)
+        self.result = ''
+
         upload = Upload(self.ok_api)
 
         article = f'{title}\n\n{text}' if title else text
@@ -38,7 +40,11 @@ class OkSender(Sender):
         }
 
         if photos:
-            await self.upload_photo(attachments, photos, upload)
+            upload_response = upload.photo(photos=photos, group_id=self.group_id)
+            photo_tokens = [upload_response['photos'][i]['token'] for i in upload_response['photos']]
+
+            for photo_id in photo_tokens:
+                attachments['media'][1]['list'].append({'id': photo_id})
 
         post = self.ok_api.mediatopic.post(
             attachment=json.dumps(attachments),
@@ -54,8 +60,4 @@ class OkSender(Sender):
             post_id = post.content.decode("utf-8").replace("\"", "")
             self.result = f'https://ok.ru/group/{self.group_id}/topic/{post_id}'
 
-    async def upload_photo(self, attachments, photos, upload):
-        upload_response = upload.photo(photos=photos, group_id=self.group_id)
-        photo_tokens = [upload_response['photos'][i]['token'] for i in upload_response['photos']]
-        for photo_id in photo_tokens:
-            attachments['media'][1]['list'].append({'id': photo_id})
+        return self.result

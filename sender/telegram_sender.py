@@ -1,16 +1,17 @@
 from aiogram import Bot, types
-from sender.sender_abs import Sender
+from sender.sender import Sender
 
 
 class TelegramSender(Sender):
     def __init__(self, token=None, chat_id=None, group_name=None):
         self.bot = Bot(token=token)
-        self.chat_id = '-' + chat_id
+        self.chat_id = chat_id
         self.group_name = group_name
         self.result = ''
 
     async def send_article(self, title='', text='', photos=None, videos=None):
         await super().send_article(title=title, text=text, photos=photos, videos=videos)
+        self.result = ''
 
         if photos is None:
             photos = []
@@ -40,3 +41,4 @@ class TelegramSender(Sender):
         finally:
             s = await self.bot.get_session()
             await s.close()
+            return self.result

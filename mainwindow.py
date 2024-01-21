@@ -21,7 +21,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
         self.setupUi(self)
-        app_icon = QIcon('images/icon256.png')
+        app_icon = QIcon('icon256.png')
         self.setWindowIcon(app_icon)
         self.setAcceptDrops(True)
 
@@ -34,6 +34,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.images_file_dialog.clicked.connect(self.open_file_dialog)
         self.send_button.clicked.connect(self.send_to_social_media)
         self.clear_all_button.clicked.connect(self.clear_all)
+        self.remember_links_button.clicked.connect(self.view_results)
         self.about.triggered.connect(self.about_window)
 
         self.poster = SocialMediaPoster()
@@ -54,15 +55,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         to_ok = self.ok_checkbox.isChecked()
 
         await self.poster.send_article(telegram=to_telegram, vk=to_vk, ok=to_ok)
-        await self.view_results()
+        await self.view_results(header='Результат отправки')
 
         self.send_button.setEnabled(True)
         self.send_button.setText('Отправить')
 
     @asyncSlot()
-    async def view_results(self):
+    async def view_results(self, header=None):
+        header = 'Спокуха, всё под контролем' if header is None else header
+
         result_dlg = QMessageBox(self)
-        result_dlg.setWindowTitle('Результат отправки')
+        result_dlg.setWindowTitle(header)
         result_dlg.setText(f'{self.poster.tg.result}\n'
                            f'{self.poster.vk.result}\n'
                            f'{self.poster.ok.result}'

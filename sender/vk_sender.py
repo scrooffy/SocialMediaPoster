@@ -1,17 +1,19 @@
 import json
 import aiohttp
-from sender.sender_abs import Sender
+from sender.sender import Sender
 
 
 class VkSender(Sender):
     # Generate token link
     # https://oauth.vk.com/authorize?client_id=<app_id>&redirect_uri=https://api.vk.com/blank.html&scope=offline,wall,photos,video&response_type=token
+    
     def __init__(self, token, group_id):
         self.token = token
         self.group_id = group_id
         self.result = ''
 
     async def send_article(self, title='', text='', photos=None, videos=None):
+        self.result = ''
         await super().send_article(title=title, text=text, photos=photos, videos=videos)
 
         article = f'{title}\n\n{text}' if title else text
@@ -39,6 +41,8 @@ class VkSender(Sender):
                     self.result += f'Проблема отправки статьи в VK: {response_result["error"]["error_msg"]}'
                 else:
                     self.result += f'https://vk.com/wall-{self.group_id}_{response_result["response"]["post_id"]}'
+
+                return self.result
 
     async def upload_photos(self, photos, session):
         attachments = []
@@ -103,7 +107,7 @@ class VkSender(Sender):
             data = await response.json()
             if 'error' in data:
                 self.result += f'Проблема отправки видео в VK: {data["error"]["error_msg"]}\n'
-                return []  # return None throws an error 'None type is not iterable'
+                return []  # return None throw an error 'None type is not iterable'
             else:
                 upload_url = data['response']['upload_url']
 
