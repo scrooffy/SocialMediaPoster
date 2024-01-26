@@ -15,7 +15,8 @@ class SocialMediaPoster:
         self.photos = []
         self.videos = []
 
-        self.settings = self.get_settings('settings/settings.json')
+        with open('settings/settings.json') as f:
+            self.settings = json.load(f)
 
         self.tg = TelegramSender(
             token=self.settings['telegram']['bot_token'],
@@ -32,17 +33,6 @@ class SocialMediaPoster:
             application_secret_key=self.settings['ok']['application_secret_key'],
             group_id=self.settings['ok']['group_id']
         )
-
-        self.ok_results = ''
-
-    def get_settings(self, relative_path):
-        absolute_path = os.path.dirname(__file__)
-        full_path = os.path.join(absolute_path, relative_path)
-
-        with open(full_path) as f:
-            settings = json.load(f)
-
-        return settings
 
     async def send_article(self, telegram=True, vk=True, ok=True):
         send_to = []
@@ -65,6 +55,7 @@ class SocialMediaPoster:
 
         async with aiohttp.ClientSession() as session:
             await asyncio.gather(*send_to)
+
         await session.close()
 
     def separate_files(self):
@@ -82,11 +73,11 @@ class SocialMediaPoster:
 
 async def main():
     a = SocialMediaPoster()
-    a.text = 'test'
-    a.title = 'test'
+
+    a.text = 'test text'
+    a.title = 'test title'
     # a.videos.append('vid.mp4')
-    # a.photos.append('icon256.png')
-    # a.photos.append('icon256.png')
+    # a.photos.append('/Users/scrooffy/Downloads/scale1200.jpg')
 
     await a.send_article(telegram=True, vk=False, ok=False)
 

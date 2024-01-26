@@ -25,7 +25,7 @@ class OkSender(Sender):
         upload = Upload(self.ok_api)
 
         article = f'{title}\n\n{text}' if title else text
-        # I don't have access to VIDEO_CONTENT, that's why no uploading video here
+        # I don't have token access to VIDEO_CONTENT, that's why no uploading video here
         attachments = {
             'media': [
                 {

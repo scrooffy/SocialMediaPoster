@@ -43,12 +43,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @asyncSlot()
     async def send_to_social_media(self):
-        self.send_button.setEnabled(False)
-        self.send_button.setText('Отправляю...')
-
         self.poster.title = self.article_title.text().strip()
         self.poster.text = self.article_text.toPlainText().strip()
         self.poster.files = list(self.files_set)
+
+        if self.poster.title == '' and self.poster.text == '' and self.poster.files == []:
+            await self.empty_send_data_error_window()
+            return
+
+        self.send_button.setEnabled(False)
+        self.send_button.setText('Отправляю...')
 
         to_telegram = self.telegram_checkbox.isChecked()
         to_vk = self.vk_checkbox.isChecked()
@@ -56,6 +60,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         await self.poster.send_article(telegram=to_telegram, vk=to_vk, ok=to_ok)
         await self.view_results(header='Результат отправки')
+
+        # Preventive clean-up in poster object because of dupping media
+        self.poster.files.clear()
+        self.poster.photos.clear()
+        self.poster.videos.clear()
 
         self.send_button.setEnabled(True)
         self.send_button.setText('Отправить')
@@ -125,6 +134,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                           '2023 год')
         about_dlg.addButton('Мне очень интересно, правда', QMessageBox.RejectRole)
         about_dlg.setIcon(QMessageBox.Information)
+        about_dlg.exec()
+
+    @asyncSlot()
+    async def empty_send_data_error_window(self):
+        about_dlg = QMessageBox(self)
+        about_dlg.setWindowTitle('Ошибка')
+        about_dlg.setText('Минимум одно поле должно быть заполнено!')
+        about_dlg.addButton('Прости, программочка!!', QMessageBox.RejectRole)
+        about_dlg.setIcon(QMessageBox.Critical)
         about_dlg.exec()
 
     def clear_all(self):

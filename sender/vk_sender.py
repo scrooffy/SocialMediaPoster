@@ -1,20 +1,18 @@
+import re
 import json
 import aiohttp
 from sender.sender import Sender
 
 
 class VkSender(Sender):
-    # Generate token link
-    # https://oauth.vk.com/authorize?client_id=<app_id>&redirect_uri=https://api.vk.com/blank.html&scope=offline,wall,photos,video&response_type=token
-    
     def __init__(self, token, group_id):
         self.token = token
         self.group_id = group_id
         self.result = ''
 
     async def send_article(self, title='', text='', photos=None, videos=None):
-        self.result = ''
         await super().send_article(title=title, text=text, photos=photos, videos=videos)
+        self.result = ''
 
         article = f'{title}\n\n{text}' if title else text
         attachments = []
@@ -35,12 +33,28 @@ class VkSender(Sender):
                 'v': '5.131'
             }
 
-            async with session.post(url, params=params) as response:
-                response_result = await response.json()
-                if 'error' in response_result:
-                    self.result += f'Проблема отправки статьи в VK: {response_result["error"]["error_msg"]}'
+            async with session.post(url, data=params) as response:
+                data = await response.read()
+                post_id = None
+                error_text = None
+
+                try:
+                    data = json.loads(data)
+                    if 'error' in data:
+                        error_text = data["error"]["error_msg"]
+                    else:
+                        post_id = data["response"]["post_id"]
+                except json.decoder.JSONDecodeError:
+                    # Extracting title from error html page
+                    match = re.search('<title>(.*?)</title>', data.decode(encoding='utf-8'), re.DOTALL)
+                    error_text = match.group(1) if match else 'Неизвестная ошибка'
+
+                if post_id:
+                    self.result += f'https://vk.com/wall-{self.group_id}_{post_id}'
+                elif error_text:
+                    self.result += f'Проблема отправки статьи в VK: {error_text}'
                 else:
-                    self.result += f'https://vk.com/wall-{self.group_id}_{response_result["response"]["post_id"]}'
+                    self.result += 'Что то определенно не так c VK ☉ ‿ ⚆'
 
                 return self.result
 
