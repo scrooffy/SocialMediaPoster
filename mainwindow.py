@@ -38,14 +38,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.about.triggered.connect(self.about_window)
 
         self.poster = SocialMediaPoster()
-        # For the uniqueness of uploaded files
-        self.files_set = set()
+        self.files = list()
 
     @asyncSlot()
     async def send_to_social_media(self):
         self.poster.title = self.article_title.text().strip()
         self.poster.text = self.article_text.toPlainText().strip()
-        self.poster.files = list(self.files_set)
+        self.poster.files = self.files
 
         if self.poster.title == '' and self.poster.text == '' and self.poster.files == []:
             await self.empty_send_data_error_window()
@@ -122,8 +121,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             event.ignore()
 
     def update_img_paths(self, filenames):
-        [self.files_set.add(i) for i in filenames]
-        self.img_paths.setPlainText('\n'.join(self.files_set))
+        # For the uniqueness of uploaded files
+        [self.files.append(i) for i in filenames if i not in self.files]
+        self.files.sort()
+        self.img_paths.setPlainText('\n'.join(self.files))
 
     @asyncSlot()
     async def about_window(self):
@@ -149,7 +150,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.article_text.setPlainText('')
         self.article_title.setText('')
         self.img_paths.setPlainText('Или перетащите сюда')
-        self.files_set.clear()
+        self.files.clear()
         self.poster.photos.clear()
         self.poster.videos.clear()
 
