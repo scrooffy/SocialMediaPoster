@@ -1,4 +1,6 @@
 import json
+from typing import Any
+
 from ok_api import OkApi, Upload
 from sender.sender import Sender
 
@@ -31,15 +33,16 @@ class OkSender(Sender):
                 {
                     'type': 'text',
                     'text': article
-                },
-                {
-                    'type': 'photo',
-                    'list': []
                 }
             ]
         }
 
         if photos:
+            photos_media_attachments: dict[str, str | list[Any]] = {
+                    'type': 'photo',
+                    'list': []
+                }
+            attachments['media'].append(photos_media_attachments)
             upload_response = upload.photo(photos=photos, group_id=self.group_id)
             photo_tokens = [upload_response['photos'][i]['token'] for i in upload_response['photos']]
 

@@ -5,6 +5,8 @@ from sender.sender import Sender
 
 
 class VkSender(Sender):
+    # Generate token link:
+    # https://oauth.vk.com/authorize?client_id=<app_id>&redirect_uri=https://api.vk.com/blank.html&scope=offline,wall,photos,video&response_type=token
     def __init__(self, token, group_id):
         self.token = token
         self.group_id = group_id
@@ -17,7 +19,7 @@ class VkSender(Sender):
         article = f'{title}\n\n{text}' if title else text
         attachments = []
 
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(trust_env=True) as session:
             if photos:
                 attachments += await self.upload_photos(photos, session)
             if videos:
@@ -33,7 +35,7 @@ class VkSender(Sender):
                 'v': '5.131'
             }
 
-            async with session.post(url, data=params) as response:
+            async with session.post(url, data=params, ssl=False) as response:
                 data = await response.read()
                 post_id = None
                 error_text = None
@@ -48,6 +50,8 @@ class VkSender(Sender):
                     # Extracting title from error html page
                     match = re.search('<title>(.*?)</title>', data.decode(encoding='utf-8'), re.DOTALL)
                     error_text = match.group(1) if match else 'Неизвестная ошибка'
+                except Exception as e:
+                    error_text = str(e)
 
                 if post_id:
                     self.result += f'https://vk.com/wall-{self.group_id}_{post_id}'
@@ -67,7 +71,7 @@ class VkSender(Sender):
             'v': '5.131'
         }
 
-        async with session.get(upload_url, params=params) as response:
+        async with session.get(upload_url, params=params, ssl=False) as response:
             data = await response.json()
             if 'error' in data:
                 self.result += f'Проблема отправки фото в VK: {data["error"]["error_msg"]}\n'
@@ -76,7 +80,7 @@ class VkSender(Sender):
                 upload_url = data['response']['upload_url']
 
         for photo in photos:
-            async with session.post(upload_url, data={'photo': open(photo, 'rb')}) as response:
+            async with session.post(upload_url, data={'photo': open(photo, 'rb')}, ssl=False) as response:
                 data = await response.text()
                 data = json.loads(data)
 
@@ -94,7 +98,7 @@ class VkSender(Sender):
                 'v': '5.131'
             }
 
-            async with session.get(save_url, params=params) as response:
+            async with session.get(save_url, params=params, ssl=False) as response:
                 data = await response.text()
                 data = json.loads(data)
 
@@ -117,7 +121,7 @@ class VkSender(Sender):
         }
         attachments = []
 
-        async with session.get(url, params=params) as response:
+        async with session.get(url, params=params, ssl=False) as response:
             data = await response.json()
             if 'error' in data:
                 self.result += f'Проблема отправки видео в VK: {data["error"]["error_msg"]}\n'
@@ -126,7 +130,7 @@ class VkSender(Sender):
                 upload_url = data['response']['upload_url']
 
         for video in videos:
-            async with session.post(upload_url, data={'video_file': open(video, 'rb')}) as response:
+            async with session.post(upload_url, data={'video_file': open(video, 'rb')}, ssl=False) as response:
                 data = await response.json()
                 if 'error' in data:
                     self.result += f'Проблема отправки видео в VK: {data["error"]["error_msg"]}\n'

@@ -1,5 +1,6 @@
 # This Python file uses the following encoding: utf-8
 import sys
+import json
 
 from PySide6 import QtGui
 from PySide6.QtGui import QIcon
@@ -37,7 +38,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.remember_links_button.clicked.connect(self.view_results)
         self.about.triggered.connect(self.about_window)
 
-        self.poster = SocialMediaPoster()
+        with open('settings/settings.json') as f:
+            smp_settings = json.load(f)
+        self.poster = SocialMediaPoster(settings=smp_settings)
         self.files = list()
 
     @asyncSlot()

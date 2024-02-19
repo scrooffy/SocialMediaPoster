@@ -1,5 +1,4 @@
 import os
-import json
 import aiohttp
 import asyncio
 from sender.vk_sender import VkSender
@@ -8,15 +7,13 @@ from sender.ok_sender import OkSender
 
 
 class SocialMediaPoster:
-    def __init__(self):
+    def __init__(self, settings=None):
         self.title = None
         self.text = None
         self.files = []
         self.photos = []
         self.videos = []
-
-        with open('settings/settings.json') as f:
-            self.settings = json.load(f)
+        self.settings = settings
 
         self.tg = TelegramSender(
             token=self.settings['telegram']['bot_token'],
@@ -73,7 +70,6 @@ class SocialMediaPoster:
 
 async def main():
     a = SocialMediaPoster()
-
     a.text = 'test text'
     a.title = 'test title'
     # a.videos.append('vid.mp4')
