@@ -37,6 +37,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.clear_all_button.clicked.connect(self.clear_all)
         self.remember_links_button.clicked.connect(self.view_results)
         self.about.triggered.connect(self.about_window)
+        self.delete_file_button.clicked.connect(self.remove_file)
+        self.delete_file_button.setEnabled(False)
+        self.file_listWidget.itemSelectionChanged.connect(self.update_file_del_button_state)
 
         with open('settings/settings.json') as f:
             smp_settings = json.load(f)
@@ -76,11 +79,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         header = 'Спокуха, всё под контролем' if header is None else header
 
         result_dlg = QMessageBox(self)
-        result_dlg.setWindowTitle(header)
-        result_dlg.setText(f'{self.poster.tg.result}\n'
-                           f'{self.poster.vk.result}\n'
-                           f'{self.poster.ok.result}'
-                           )
+        if self.poster.tg.result or self.poster.vk.result or self.poster.ok.result:
+            result_dlg.setWindowTitle(header)
+            result_dlg.setText(f'{self.poster.tg.result}\n'
+                               f'{self.poster.vk.result}\n'
+                               f'{self.poster.ok.result}'
+                               )
+        else:
+            result_dlg.setWindowTitle(header+' (наверное?)')
+            result_dlg.setText('Ссылки, как истинные мудрецы, предпочитают оставаться в тени, '
+                               'чтобы не подвергаться искажениям и неверным интерпретациям. (ง ͠ಥ_ಥ)ง')
         copy_button = result_dlg.addButton('Копировать результаты', QMessageBox.ActionRole)
         result_dlg.addButton('Закрыть', QMessageBox.RejectRole)
         copy_button.clicked.connect(self.copy_results)
@@ -127,7 +135,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # For the uniqueness of uploaded files
         [self.files.append(i) for i in filenames if i not in self.files]
         self.files.sort()
-        self.img_paths.setPlainText('\n'.join(self.files))
+
+        self.file_listWidget.clear()
+        self.file_listWidget.addItems(self.files)
+
+    def remove_file(self):
+        selected_item = self.file_listWidget.currentItem()
+        if selected_item:
+            self.file_listWidget.takeItem(self.file_listWidget.row(selected_item))
+            self.files.remove(selected_item.text())
+
+    def update_file_del_button_state(self):
+        selected_items = self.file_listWidget.selectedItems()
+        self.delete_file_button.setEnabled(len(selected_items) > 0)
 
     @asyncSlot()
     async def about_window(self):
@@ -152,7 +172,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def clear_all(self):
         self.article_text.setPlainText('')
         self.article_title.setText('')
-        self.img_paths.setPlainText('Или перетащите сюда')
+        self.file_listWidget.clear()
         self.files.clear()
         self.poster.photos.clear()
         self.poster.videos.clear()

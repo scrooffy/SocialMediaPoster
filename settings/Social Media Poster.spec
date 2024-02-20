@@ -1,7 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import copy_metadata
 
-datas = [('C:/Users/Prizyv/PycharmProjects/multipost/settings/settings.json', '.'), ('C:/Users/Prizyv/PycharmProjects/multipost/images/icon256.png', '.')]
+datas = [('settings/settings.json', '.'), ('icon256.png', '.')]
 datas += copy_metadata('magic_filter')
 
 
@@ -9,7 +9,7 @@ block_cipher = None
 
 
 a = Analysis(
-    ['C:/Users/Prizyv/PycharmProjects/multipost/mainwindow.py'],
+    ['mainwindow.py'],
     pathex=[],
     binaries=[],
     datas=datas,
@@ -41,7 +41,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['C:\\Users\\Prizyv\\PycharmProjects\\multipost\\images\\icon256.ico'],
+    icon=['icon256.ico'],
 )
 coll = COLLECT(
     exe,

@@ -8,13 +8,19 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect, QSize, Qt)
-from PySide6.QtGui import (QAction, QFont)
-from PySide6.QtWidgets import (QCheckBox, QFrame, QGridLayout,
-    QHBoxLayout, QLabel, QLineEdit,
-    QMenu, QMenuBar, QPlainTextEdit, QPushButton,
-    QSizePolicy, QSpacerItem, QStatusBar, QVBoxLayout,
-    QWidget)
+from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
+    QMetaObject, QObject, QPoint, QRect,
+    QSize, QTime, QUrl, Qt)
+from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
+    QCursor, QFont, QFontDatabase, QGradient,
+    QIcon, QImage, QKeySequence, QLinearGradient,
+    QPainter, QPalette, QPixmap, QRadialGradient,
+    QTransform)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QFrame, QGridLayout,
+    QHBoxLayout, QLabel, QLayout, QLineEdit,
+    QListWidget, QListWidgetItem, QMainWindow, QMenu,
+    QMenuBar, QPlainTextEdit, QPushButton, QSizePolicy,
+    QSpacerItem, QStatusBar, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -35,6 +41,7 @@ class Ui_MainWindow(object):
         sizePolicy.setHeightForWidth(self.centralwidget.sizePolicy().hasHeightForWidth())
         self.centralwidget.setSizePolicy(sizePolicy)
         self.centralwidget.setMinimumSize(QSize(0, 0))
+        self.centralwidget.setMaximumSize(QSize(800, 16777215))
         self.line = QFrame(self.centralwidget)
         self.line.setObjectName(u"line")
         self.line.setGeometry(QRect(10, 550, 521, 20))
@@ -42,14 +49,25 @@ class Ui_MainWindow(object):
         self.line.setFrameShadow(QFrame.Sunken)
         self.layoutWidget = QWidget(self.centralwidget)
         self.layoutWidget.setObjectName(u"layoutWidget")
-        self.layoutWidget.setGeometry(QRect(20, 20, 501, 521))
+        self.layoutWidget.setGeometry(QRect(10, 20, 511, 521))
         self.gridLayout = QGridLayout(self.layoutWidget)
         self.gridLayout.setObjectName(u"gridLayout")
+        self.gridLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
-        self.images_file_dialog = QPushButton(self.layoutWidget)
-        self.images_file_dialog.setObjectName(u"images_file_dialog")
+        self.send_to_label = QLabel(self.layoutWidget)
+        self.send_to_label.setObjectName(u"send_to_label")
 
-        self.gridLayout.addWidget(self.images_file_dialog, 6, 1, 1, 1)
+        self.gridLayout.addWidget(self.send_to_label, 3, 1, 1, 1)
+
+        self.verticalSpacer_2 = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Preferred)
+
+        self.gridLayout.addItem(self.verticalSpacer_2, 9, 1, 1, 1)
+
+        self.file_listWidget = QListWidget(self.layoutWidget)
+        self.file_listWidget.setObjectName(u"file_listWidget")
+        self.file_listWidget.setMaximumSize(QSize(16777215, 80))
+
+        self.gridLayout.addWidget(self.file_listWidget, 7, 2, 3, 2)
 
         self.send_to_layout = QVBoxLayout()
         self.send_to_layout.setObjectName(u"send_to_layout")
@@ -74,26 +92,6 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addLayout(self.send_to_layout, 4, 1, 1, 1)
 
-        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
-
-        self.gridLayout.addItem(self.verticalSpacer, 2, 1, 1, 1)
-
-        self.article_title_label = QLabel(self.layoutWidget)
-        self.article_title_label.setObjectName(u"article_title_label")
-
-        self.gridLayout.addWidget(self.article_title_label, 0, 1, 1, 1)
-
-        self.send_to_label = QLabel(self.layoutWidget)
-        self.send_to_label.setObjectName(u"send_to_label")
-
-        self.gridLayout.addWidget(self.send_to_label, 3, 1, 1, 1)
-
-        self.article_text_label = QLabel(self.layoutWidget)
-        self.article_text_label.setObjectName(u"article_text_label")
-        self.article_text_label.setLayoutDirection(Qt.LeftToRight)
-
-        self.gridLayout.addWidget(self.article_text_label, 1, 1, 1, 1)
-
         self.article_title = QLineEdit(self.layoutWidget)
         self.article_title.setObjectName(u"article_title")
         font = QFont()
@@ -106,21 +104,19 @@ class Ui_MainWindow(object):
 
         self.gridLayout.addWidget(self.article_title, 0, 2, 1, 2)
 
-        self.verticalSpacer_2 = QSpacerItem(20, 20, QSizePolicy.Minimum, QSizePolicy.Preferred)
+        self.article_title_label = QLabel(self.layoutWidget)
+        self.article_title_label.setObjectName(u"article_title_label")
 
-        self.gridLayout.addItem(self.verticalSpacer_2, 7, 1, 1, 1)
+        self.gridLayout.addWidget(self.article_title_label, 0, 1, 1, 1)
 
-        self.img_paths = QPlainTextEdit(self.layoutWidget)
-        self.img_paths.setObjectName(u"img_paths")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.img_paths.sizePolicy().hasHeightForWidth())
-        self.img_paths.setSizePolicy(sizePolicy1)
-        self.img_paths.setMaximumSize(QSize(16777215, 60))
-        self.img_paths.setReadOnly(True)
+        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
 
-        self.gridLayout.addWidget(self.img_paths, 6, 2, 2, 2)
+        self.gridLayout.addItem(self.verticalSpacer, 2, 1, 1, 1)
+
+        self.images_file_dialog = QPushButton(self.layoutWidget)
+        self.images_file_dialog.setObjectName(u"images_file_dialog")
+
+        self.gridLayout.addWidget(self.images_file_dialog, 7, 1, 1, 1)
 
         self.article_text = QPlainTextEdit(self.layoutWidget)
         self.article_text.setObjectName(u"article_text")
@@ -130,7 +126,20 @@ class Ui_MainWindow(object):
         self.article_text.setFont(font1)
         self.article_text.setAcceptDrops(False)
 
-        self.gridLayout.addWidget(self.article_text, 1, 2, 5, 2)
+        self.gridLayout.addWidget(self.article_text, 1, 2, 6, 2)
+
+        self.article_text_label = QLabel(self.layoutWidget)
+        self.article_text_label.setObjectName(u"article_text_label")
+        self.article_text_label.setLayoutDirection(Qt.LeftToRight)
+
+        self.gridLayout.addWidget(self.article_text_label, 1, 1, 1, 1)
+
+        self.delete_file_button = QPushButton(self.layoutWidget)
+        self.delete_file_button.setObjectName(u"delete_file_button")
+        self.delete_file_button.setCheckable(False)
+        self.delete_file_button.setFlat(False)
+
+        self.gridLayout.addWidget(self.delete_file_button, 8, 1, 1, 1)
 
         self.layoutWidget1 = QWidget(self.centralwidget)
         self.layoutWidget1.setObjectName(u"layoutWidget1")
@@ -173,20 +182,24 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
+        self.delete_file_button.setDefault(False)
+        self.send_button.setDefault(True)
+
+
         QMetaObject.connectSlotsByName(MainWindow)
     # setupUi
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Social Media Poster", None))
         self.about.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0431 \u0430\u0432\u0442\u043e\u0440\u0435", None))
-        self.images_file_dialog.setText(QCoreApplication.translate("MainWindow", u"\u0412\u044b\u0431\u0440\u0430\u0442\u044c \u0438\u0437\u043e\u0431\u0440\u0430\u0436\u0435\u043d\u0438\u044f", None))
+        self.send_to_label.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0432:", None))
         self.telegram_checkbox.setText(QCoreApplication.translate("MainWindow", u"Telegram", None))
         self.vk_checkbox.setText(QCoreApplication.translate("MainWindow", u"VK", None))
         self.ok_checkbox.setText(QCoreApplication.translate("MainWindow", u"OK.ru", None))
         self.article_title_label.setText(QCoreApplication.translate("MainWindow", u"\u0417\u0430\u0433\u043e\u043b\u043e\u0432\u043e\u043a \u0441\u0442\u0430\u0442\u044c\u0438:", None))
-        self.send_to_label.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0432:", None))
+        self.images_file_dialog.setText(QCoreApplication.translate("MainWindow", u"\u0412\u044b\u0431\u0440\u0430\u0442\u044c \u043c\u0435\u0434\u0438\u0430\u0444\u0430\u0439\u043b", None))
         self.article_text_label.setText(QCoreApplication.translate("MainWindow", u"\u0422\u0435\u043a\u0441\u0442 \u0441\u0442\u0430\u0442\u044c\u0438:", None))
-        self.img_paths.setPlainText(QCoreApplication.translate("MainWindow", u"\u0418\u043b\u0438 \u043f\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0441\u044e\u0434\u0430", None))
+        self.delete_file_button.setText(QCoreApplication.translate("MainWindow", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0432\u044b\u0431\u0440\u0430\u043d\u043d\u044b\u0439 \u0444\u0430\u0439\u043b", None))
         self.clear_all_button.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0447\u0438\u0441\u0442\u0438\u0442\u044c \u0432\u0441\u0451", None))
         self.remember_links_button.setText(QCoreApplication.translate("MainWindow", u" \u0410\u0410\u0410\u0410\u0410\u0410 \u042f \u0417\u0410\u0411\u042b\u041b \u0421\u0421\u042b\u041b\u041a\u0418\u0418!!!!!11!", None))
         self.send_button.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c", None))
