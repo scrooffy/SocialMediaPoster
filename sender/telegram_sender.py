@@ -1,4 +1,5 @@
 import re
+from math import ceil
 from aiogram import Bot
 from aiogram.types import FSInputFile
 from aiogram.utils.media_group import MediaGroupBuilder
@@ -35,7 +36,7 @@ def split_into_chunks(text, chunk_size):
             current_chunk += sentence
         else:
             if second_chunk_flag:
-                chunk_size -= 14    # because additional chunks with title = title + ' (Продолжение)'
+                chunk_size -= 14  # because additional chunks with title = title + ' (Продолжение)'
                 second_chunk_flag = False
             chunks.append(current_chunk)
             current_chunk = sentence
@@ -64,26 +65,28 @@ class TelegramSender(Sender):
         is_long_read = True if not is_caption_text and len(article) > 4096 else False
 
         caption = article if is_caption_text is True else None
-        media = MediaGroupBuilder(caption=caption)
-        if photos:
-            for photo in photos:
-                try:
-                    media.add_photo(FSInputFile(photo), parse_mode='HTML')
-                except Exception as e:
-                    self.result += f"Ошибка отправки фото {photo}: {e}\n"
+
+        media_groups = [MediaGroupBuilder(caption=caption)]
+        # If media files more than 10, split them to several groups
+        if len(photos) + len(videos) > 10:
+            files_count = len(photos) + len(videos) - 10
+            chunk_count = ceil(files_count / 10)
+            [media_groups.append(MediaGroupBuilder()) for i in range(chunk_count)]
+
+        files_count = 0
+        current_group = 0
         if videos:
-            for video in videos:
-                try:
-                    media.add_video(FSInputFile(video), parse_mode='HTML')
-                except Exception as e:
-                    self.result += f"Ошибка отправки видео {video}: {e}\n"
+            files_count, curr_group = self.add_videos(videos, media_groups, files_count, current_group)
+        if photos:
+            self.add_photos(photos, media_groups, files_count, current_group)
 
         try:
             # If send just a media group, message_id accessible in msg[0].message_id, otherwise msg.message_id
             msg_id = None
             if photos or videos:
-                msg = await self.bot.send_media_group(self.chat_id, media=media.build())
-                msg_id = msg[0].message_id
+                for group in media_groups:
+                    msg = await self.bot.send_media_group(self.chat_id, media=group.build())
+                    msg_id = msg[0].message_id
                 if not (is_caption_text or is_long_read):
                     msg = await self.bot.send_message(self.chat_id, article, parse_mode='HTML')
                     msg_id = msg.message_id
@@ -109,3 +112,27 @@ class TelegramSender(Sender):
         finally:
             await self.bot.session.close()
             return self.result
+
+    def add_photos(self, photos, media_groups, files_count, curr_group):
+        for photo in photos:
+            try:
+                media_groups[curr_group].add_photo(FSInputFile(photo), parse_mode='HTML')
+                files_count += 1
+                if files_count == 10:
+                    files_count = 0
+                    curr_group += 1
+            except Exception as e:
+                self.result += f"Ошибка отправки фото {photo}: {e}\n"
+
+    def add_videos(self, videos, media_groups, files_count, curr_group):
+        for video in videos:
+            try:
+                media_groups[curr_group].add_video(FSInputFile(video), parse_mode='HTML')
+                files_count += 1
+                if files_count == 10:
+                    files_count = 0
+                    curr_group += 1
+            except Exception as e:
+                self.result += f"Ошибка отправки видео {video}: {e}\n"
+
+        return files_count, curr_group
