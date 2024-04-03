@@ -20,7 +20,7 @@ class OkSender(Sender):
 
         self.result = ''
 
-    async def send_article(self, title='', text='', photos=None, videos=None):
+    async def send_article(self, title='', text='', photos=None, videos=None, delayed_post_date=None):
         await super().send_article(title=title, text=text, photos=photos, videos=videos)
         self.result = ''
 
@@ -48,6 +48,9 @@ class OkSender(Sender):
 
             for photo_id in photo_tokens:
                 attachments['media'][1]['list'].append({'id': photo_id})
+
+        if delayed_post_date:
+            attachments['publishAtMs'] = delayed_post_date * 1000
 
         post = self.ok_api.mediatopic.post(
             attachment=json.dumps(attachments),

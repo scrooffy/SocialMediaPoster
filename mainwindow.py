@@ -5,7 +5,7 @@ import json
 from PySide6 import QtGui
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QDateTime
 from qasync import QEventLoop, asyncSlot
 import pyperclip
 
@@ -37,9 +37,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.clear_all_button.clicked.connect(self.clear_all)
         self.remember_links_button.clicked.connect(self.view_results)
         self.about.triggered.connect(self.about_window)
+
         self.delete_file_button.clicked.connect(self.remove_file)
         self.delete_file_button.setEnabled(False)
-        self.file_listWidget.itemSelectionChanged.connect(self.update_file_del_button_state)
+
+        self.file_listWidget.itemSelectionChanged.connect(self.update_file_buttons_state)
+        self.file_order_up.setEnabled(False)
+        self.file_order_up.clicked.connect(self.move_file_up)
+        self.file_order_down.setEnabled(False)
+        self.file_order_down.clicked.connect(self.move_file_down)
+
+        self.delayed_time.setDateTime(QDateTime.currentDateTime())
+        self.delayed_time.setEnabled(False)
+        self.delayed_post_check.stateChanged.connect(self.delayed_date_state_changed)
 
         with open('settings/settings.json') as f:
             smp_settings = json.load(f)
@@ -51,15 +61,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.poster.title = self.article_title.text().strip()
         self.poster.text = self.article_text.toPlainText().strip()
         self.poster.files = self.files
+        self.poster.delayed_post_date = self.get_timestamp() if self.delayed_post_check.isChecked() else None
 
         if self.poster.title == '' and self.poster.text == '' and self.poster.files == []:
-            await self.empty_send_data_error_window()
+            await self.error_window('Минимум одно поле должно быть заполнено!')
+            return
+
+        if self.delayed_post_check.isChecked() and QDateTime.currentDateTime() > self.delayed_time.dateTime():
+            await self.error_window('Заданное время меньше чем настоящее!')
             return
 
         self.send_button.setEnabled(False)
         self.send_button.setText('Отправляю...')
 
-        to_telegram = self.telegram_checkbox.isChecked()
+        to_telegram = self.telegram_checkbox.isChecked() if not self.delayed_post_check.isChecked() else False
         to_vk = self.vk_checkbox.isChecked()
         to_ok = self.ok_checkbox.isChecked()
 
@@ -145,9 +160,38 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.file_listWidget.takeItem(self.file_listWidget.row(selected_item))
             self.files.remove(selected_item.text())
 
-    def update_file_del_button_state(self):
-        selected_items = self.file_listWidget.selectedItems()
-        self.delete_file_button.setEnabled(len(selected_items) > 0)
+    def update_file_buttons_state(self):
+        is_selected_items = len(self.file_listWidget.selectedItems()) > 0
+        self.delete_file_button.setEnabled(is_selected_items)
+        self.file_order_up.setEnabled(is_selected_items)
+        self.file_order_down.setEnabled(is_selected_items)
+
+    def move_file_up(self):
+        current_row = self.file_listWidget.currentRow()
+        if current_row > 0:
+            current_item = self.file_listWidget.takeItem(current_row)
+            self.file_listWidget.insertItem(current_row - 1, current_item)
+            self.file_listWidget.setCurrentRow(current_row - 1)
+            self.files.insert(current_row - 1, self.files.pop(current_row))
+
+    def move_file_down(self):
+        current_row = self.file_listWidget.currentRow()
+        if current_row < self.file_listWidget.count() - 1:
+            current_item = self.file_listWidget.takeItem(current_row)
+            self.file_listWidget.insertItem(current_row + 1, current_item)
+            self.file_listWidget.setCurrentRow(current_row + 1)
+            self.files.insert(current_row + 1, self.files.pop(current_row))
+
+    def delayed_date_state_changed(self):
+        if self.delayed_post_check.isChecked():
+            self.delayed_time.setEnabled(True)
+            self.telegram_checkbox.setEnabled(False)
+        else:
+            self.delayed_time.setEnabled(False)
+            self.telegram_checkbox.setEnabled(True)
+
+    def get_timestamp(self):
+        return self.delayed_time.dateTime().toPython().timestamp()
 
     @asyncSlot()
     async def about_window(self):
@@ -161,10 +205,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         about_dlg.exec()
 
     @asyncSlot()
-    async def empty_send_data_error_window(self):
+    async def error_window(self, text='Неизвестная ошибка'):
         about_dlg = QMessageBox(self)
         about_dlg.setWindowTitle('Ошибка')
-        about_dlg.setText('Минимум одно поле должно быть заполнено!')
+        about_dlg.setText(text)
         about_dlg.addButton('Прости, программочка!!', QMessageBox.RejectRole)
         about_dlg.setIcon(QMessageBox.Critical)
         about_dlg.exec()

@@ -1,4 +1,5 @@
 import os
+import json
 import aiohttp
 import asyncio
 from sender.vk_sender import VkSender
@@ -13,6 +14,7 @@ class SocialMediaPoster:
         self.files = []
         self.photos = []
         self.videos = []
+        self.delayed_post_date = None
         self.settings = settings
 
         self.tg = TelegramSender(
@@ -43,11 +45,13 @@ class SocialMediaPoster:
             )
         if vk:
             send_to.append(
-                self.vk.send_article(text=self.text, title=self.title, photos=self.photos, videos=self.videos)
+                self.vk.send_article(text=self.text, title=self.title, photos=self.photos, videos=self.videos,
+                                     delayed_post_date=self.delayed_post_date)
             )
         if ok:
             send_to.append(
-                self.ok.send_article(text=self.text, title=self.title, photos=self.photos)
+                self.ok.send_article(text=self.text, title=self.title, photos=self.photos,
+                                     delayed_post_date=self.delayed_post_date)
             )
 
         async with aiohttp.ClientSession() as session:
@@ -69,13 +73,16 @@ class SocialMediaPoster:
 
 
 async def main():
-    a = SocialMediaPoster()
+    with open('settings/settings_test.json') as f:
+        smp_settings = json.load(f)
+    a = SocialMediaPoster(settings=smp_settings)
     a.text = 'test text'
     a.title = 'test title'
+    # a.delayed_post_date = 1712055098
     # a.videos.append('vid.mp4')
     # a.photos.append('/Users/scrooffy/Downloads/scale1200.jpg')
 
-    await a.send_article(telegram=True, vk=False, ok=False)
+    await a.send_article(telegram=False, vk=False, ok=True)
 
 
 if __name__ == '__main__':

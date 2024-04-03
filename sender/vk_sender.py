@@ -12,7 +12,7 @@ class VkSender(Sender):
         self.group_id = group_id
         self.result = ''
 
-    async def send_article(self, title='', text='', photos=None, videos=None):
+    async def send_article(self, title='', text='', photos=None, videos=None, delayed_post_date=None):
         await super().send_article(title=title, text=text, photos=photos, videos=videos)
         self.result = ''
 
@@ -34,6 +34,9 @@ class VkSender(Sender):
                 'access_token': self.token,
                 'v': '5.131'
             }
+
+            if delayed_post_date:
+                params['publish_date'] = delayed_post_date
 
             async with session.post(url, data=params, ssl=False) as response:
                 data = await response.read()
