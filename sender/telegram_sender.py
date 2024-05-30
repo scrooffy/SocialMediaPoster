@@ -6,42 +6,31 @@ from aiogram.utils.media_group import MediaGroupBuilder
 from sender.sender import Sender
 
 
-# Not the best implementation but ok
-def split_into_chunks(text, chunk_size):
-    # find all sentences
-    matches = re.finditer(r'(.*?)[\.!?]+', text, re.MULTILINE)
-    sentences = []
-    for matchNum, match in enumerate(matches, start=1):
-        sentences.append(match.group())
-
-    # check abbreviations
-    word_abbreviations_pattern = re.compile(r'\s\w[\.!?]+')
-    processed_sentences = []
-    i = 0
-    while i < len(sentences):
-        if word_abbreviations_pattern.search(sentences[i]):
-            # If the current line matches the regular expression, append it to the next one
-            processed_sentences.append(sentences[i] + sentences[i + 1])
-            i += 2
-        else:
-            # If the current line does not match the regular expression, simply add it to the result
-            processed_sentences.append(sentences[i])
-            i += 1
+def split_into_chunks(text, chunk_size=4096):
+    sentences = re.split(r'(?<=[.!?])\s+', text)
 
     chunks = []
-    current_chunk = ''
-    second_chunk_flag = True
-    for sentence in processed_sentences:
-        if len(current_chunk + sentence) <= chunk_size:
-            current_chunk += sentence
-        else:
-            if second_chunk_flag:
-                chunk_size -= 14  # because additional chunks with title = title + ' (Продолжение)'
-                second_chunk_flag = False
-            chunks.append(current_chunk)
-            current_chunk = sentence
+    current_block = ''
 
-    chunks.append(current_chunk)
+    for sentence in sentences:
+        if len(current_block) + len(sentence) + 1 <= chunk_size:
+            if sentence + '\n\n' in text:
+                current_block += sentence + '\n\n'
+            elif sentence + '\n' in text:
+                current_block += sentence + '\n'
+            else:
+                current_block += sentence + ' '
+        else:
+            chunks.append(current_block.strip())
+            if sentence + '\n\n' in text:
+                current_block = sentence + '\n\n'
+            elif sentence + '\n' in text:
+                current_block = sentence + '\n'
+            else:
+                current_block = sentence + ' '
+
+    if current_block:
+        chunks.append(current_block.strip())
 
     return chunks
 
@@ -94,9 +83,8 @@ class TelegramSender(Sender):
                 msg = await self.bot.send_message(self.chat_id, article, parse_mode='HTML')
                 msg_id = msg.message_id
             if is_long_read:
-                articles = split_into_chunks(text, 4096 - len(processed_title))
+                articles = split_into_chunks(text)
                 articles[0] = processed_title + articles[0]
-                articles[1:] = [f'<b>{title}  (Продолжение)</b>\n\n{i}' for i in articles[1:]]
 
                 msg = await self.bot.send_message(self.chat_id, articles[0], parse_mode='HTML')
                 msg_id, previous_message_id = [msg.message_id] * 2  # The same values for both variables
@@ -127,7 +115,7 @@ class TelegramSender(Sender):
     def add_videos(self, videos, media_groups, files_count, curr_group):
         for video in videos:
             try:
-                media_groups[curr_group].add_video(FSInputFile(video), parse_mode='HTML')
+                media_groups[curr_group].add_video(FSInputFile(video), parse_mode='HTML', supports_streaming=True)
                 files_count += 1
                 if files_count == 10:
                     files_count = 0

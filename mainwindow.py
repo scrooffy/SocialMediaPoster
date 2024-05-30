@@ -1,6 +1,7 @@
 # This Python file uses the following encoding: utf-8
 import sys
 import json
+import re
 
 from PySide6 import QtGui
 from PySide6.QtGui import QIcon
@@ -37,6 +38,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.clear_all_button.clicked.connect(self.clear_all)
         self.remember_links_button.clicked.connect(self.view_results)
         self.about.triggered.connect(self.about_window)
+        self.format_text_button.clicked.connect(self.format_text)
 
         self.delete_file_button.clicked.connect(self.remove_file)
         self.delete_file_button.setEnabled(False)
@@ -212,6 +214,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         about_dlg.addButton('Прости, программочка!!', QMessageBox.RejectRole)
         about_dlg.setIcon(QMessageBox.Critical)
         about_dlg.exec()
+
+    def format_text(self):
+        many_spaces_pattern = re.compile(r' {2,}|\t+')  # 2 and more whitespaces or one and more tabs
+        formatted_text = re.sub(many_spaces_pattern, ' ', self.article_text.toPlainText().strip())
+        formatted_text = re.sub(r'^\s+', '', formatted_text, flags=re.MULTILINE)  # spaces after newline
+        formatted_text = re.sub(r'\n+', '\n\n', formatted_text)  # newlines(1 or more) to double newlines
+        self.article_text.setPlainText(formatted_text)
+        self.article_title.setText(re.sub(many_spaces_pattern, ' ', self.article_title.text().strip()))
 
     def clear_all(self):
         self.article_text.setPlainText('')
