@@ -62,7 +62,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     async def send_to_social_media(self):
         self.poster.title = self.article_title.text().strip()
         self.poster.text = self.article_text.toPlainText().strip()
-        self.poster.files = self.files
+        self.poster.files = self.files.copy()
         self.poster.delayed_post_date = self.get_timestamp() if self.delayed_post_check.isChecked() else None
 
         if self.poster.title == '' and self.poster.text == '' and self.poster.files == []:
@@ -84,9 +84,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         await self.view_results(header='Результат отправки')
 
         # Preventive clean-up in poster object because of dupping media
-        self.poster.files.clear()
-        self.poster.photos.clear()
-        self.poster.videos.clear()
+        self.poster.clear_files()
 
         self.send_button.setEnabled(True)
         self.send_button.setText('Отправить')
@@ -98,10 +96,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         result_dlg = QMessageBox(self)
         if self.poster.tg.result or self.poster.vk.result or self.poster.ok.result:
             result_dlg.setWindowTitle(header)
-            result_dlg.setText(f'{self.poster.tg.result}\n'
-                               f'{self.poster.vk.result}\n'
-                               f'{self.poster.ok.result}'
-                               )
+            result_dlg.setText(f'{self.poster.tg.result}\n{self.poster.vk.result}\n{self.poster.ok.result}')
         else:
             result_dlg.setWindowTitle(header+' (наверное?)')
             result_dlg.setText('Ссылки, как истинные мудрецы, предпочитают оставаться в тени, '
@@ -199,8 +194,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     async def about_window(self):
         about_dlg = QMessageBox(self)
         about_dlg.setWindowTitle('Об авторе')
-        about_dlg.setText('Разработчик: Косицин Илья\n' +
-                          'Специально для газеты \"ПРИЗЫВ\"\n' +
+        about_dlg.setText('Разработчик: Косицин Илья\n'
+                          'Специально для газеты \"ПРИЗЫВ\"\n'
                           '2023 год')
         about_dlg.addButton('Мне очень интересно, правда', QMessageBox.RejectRole)
         about_dlg.setIcon(QMessageBox.Information)
@@ -216,10 +211,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         about_dlg.exec()
 
     def format_text(self):
-        many_spaces_pattern = re.compile(r' {2,}|\t+')  # 2 and more whitespaces or one and more tabs
+        many_spaces_pattern = re.compile(r' {2,}|\t+') # 2 and more whitespaces or one and more tabs
         formatted_text = re.sub(many_spaces_pattern, ' ', self.article_text.toPlainText().strip())
-        formatted_text = re.sub(r'^\s+', '', formatted_text, flags=re.MULTILINE)  # spaces after newline
-        formatted_text = re.sub(r'\n+', '\n\n', formatted_text)  # newlines(1 or more) to double newlines
+        formatted_text = re.sub(r'^\s+', '', formatted_text, flags=re.MULTILINE) # spaces after newline
+        formatted_text = re.sub(r'\n+', '\n\n', formatted_text) # newlines(1 or more) to double newlines
         self.article_text.setPlainText(formatted_text)
         self.article_title.setText(re.sub(many_spaces_pattern, ' ', self.article_title.text().strip()))
 
@@ -228,8 +223,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.article_title.setText('')
         self.file_listWidget.clear()
         self.files.clear()
-        self.poster.photos.clear()
-        self.poster.videos.clear()
+        self.poster.clear_files()
 
 
 def main():

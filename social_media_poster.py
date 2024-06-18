@@ -71,6 +71,11 @@ class SocialMediaPoster:
             elif file_extension.lower().endswith(vid_extensions):
                 self.videos.append(file)
 
+    def clear_files(self):
+        self.files.clear()
+        self.photos.clear()
+        self.videos.clear()
+
 
 async def main():
     with open('settings/settings_test.json') as f:
