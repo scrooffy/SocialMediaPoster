@@ -53,7 +53,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.delayed_time.setEnabled(False)
         self.delayed_post_check.stateChanged.connect(self.delayed_date_state_changed)
 
-        with open('settings/settings.json') as f:
+        with open('settings/settings_test.json') as f:
             smp_settings = json.load(f)
         self.poster = SocialMediaPoster(settings=smp_settings)
         self.files = list()
@@ -211,10 +211,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         about_dlg.exec()
 
     def format_text(self):
-        many_spaces_pattern = re.compile(r' {2,}|\t+') # 2 and more whitespaces or one and more tabs
+        many_spaces_pattern = re.compile(r' {2,}|\t+')  # 2 and more whitespaces or one and more tabs
         formatted_text = re.sub(many_spaces_pattern, ' ', self.article_text.toPlainText().strip())
-        formatted_text = re.sub(r'^\s+', '', formatted_text, flags=re.MULTILINE) # spaces after newline
-        formatted_text = re.sub(r'\n+', '\n\n', formatted_text) # newlines(1 or more) to double newlines
+        formatted_text = re.sub(r'^\s+', '', formatted_text, flags=re.MULTILINE)    # spaces after newline
+        formatted_text = re.sub(r'\s+\n', '\n', formatted_text)  # spaces before newline
+        formatted_text = re.sub(r'\n+', '\n\n', formatted_text)  # newlines(1 or more) to double newlines
         self.article_text.setPlainText(formatted_text)
         self.article_title.setText(re.sub(many_spaces_pattern, ' ', self.article_title.text().strip()))
 
