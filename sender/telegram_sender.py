@@ -9,7 +9,7 @@ from sender.sender import Sender
 def split_into_chunks(text, chunk_size=4096):
     sentences = re.split(r'(?<=[.!?])\s+', text)
 
-    chunks = []
+    blocks = []
     current_block = ''
 
     for sentence in sentences:
@@ -21,7 +21,7 @@ def split_into_chunks(text, chunk_size=4096):
             else:
                 current_block += sentence + ' '
         else:
-            chunks.append(current_block.strip())
+            blocks.append(current_block.strip())
             if sentence + '\n\n' in text:
                 current_block = sentence + '\n\n'
             elif sentence + '\n' in text:
@@ -30,9 +30,9 @@ def split_into_chunks(text, chunk_size=4096):
                 current_block = sentence + ' '
 
     if current_block:
-        chunks.append(current_block.strip())
+        blocks.append(current_block.strip())
 
-    return chunks
+    return blocks
 
 
 class TelegramSender(Sender):
@@ -83,9 +83,8 @@ class TelegramSender(Sender):
                 msg = await self.bot.send_message(self.chat_id, article, parse_mode='HTML')
                 msg_id = msg.message_id
             if is_long_read:
-                articles = split_into_chunks(text)
+                articles = split_into_chunks(text, chunk_size=3500)
                 articles[0] = processed_title + articles[0]
-
                 msg = await self.bot.send_message(self.chat_id, articles[0], parse_mode='HTML')
                 msg_id, previous_message_id = [msg.message_id] * 2  # The same values for both variables
                 for article in articles[1:]:
