@@ -6,7 +6,7 @@ from aiogram.utils.media_group import MediaGroupBuilder
 from sender.sender import Sender
 
 
-def split_into_chunks(text, chunk_size=4096):
+def split_into_chunks(text: str, chunk_size=4096) -> list:
     sentences = re.split(r'(?<=[.!?])\s+', text)
 
     blocks = []
@@ -42,7 +42,7 @@ class TelegramSender(Sender):
         self.group_name = group_name
         self.result = ''
 
-    async def send_article(self, title='', text='', photos=None, videos=None):
+    async def send_article(self, title='', text='', photos=None, videos=None) -> str:
         await super().send_article(title=title, text=text, photos=photos, videos=videos)
         self.result = ''
 
@@ -100,7 +100,7 @@ class TelegramSender(Sender):
             await self.bot.session.close()
             return self.result
 
-    def add_photos(self, photos, media_groups, files_count, curr_group):
+    def add_photos(self, photos: list, media_groups: list, files_count: int, curr_group: int) -> None:
         for photo in photos:
             try:
                 media_groups[curr_group].add_photo(FSInputFile(photo), parse_mode='HTML')
@@ -111,7 +111,7 @@ class TelegramSender(Sender):
             except Exception as e:
                 self.result += f"Ошибка отправки фото {photo}: {e}\n"
 
-    def add_videos(self, videos, media_groups, files_count, curr_group):
+    def add_videos(self, videos: list, media_groups: list, files_count: int, curr_group: int) -> tuple:
         for video in videos:
             try:
                 media_groups[curr_group].add_video(FSInputFile(video), parse_mode='HTML', supports_streaming=True)

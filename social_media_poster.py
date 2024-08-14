@@ -8,7 +8,7 @@ from sender.ok_sender import OkSender
 
 
 class SocialMediaPoster:
-    def __init__(self, settings=None):
+    def __init__(self, telegram=True, vk=True, ok= True, settings=None):
         self.title = None
         self.text = None
         self.files = []
@@ -17,40 +17,43 @@ class SocialMediaPoster:
         self.delayed_post_date = None
         self.settings = settings
 
-        self.tg = TelegramSender(
-            token=self.settings['telegram']['bot_token'],
-            chat_id=self.settings['telegram']['chat_id'],
-            group_name=self.settings['telegram']['group_name']
-        )
-        self.vk = VkSender(
-            token=self.settings['vk']['token'],
-            group_id=self.settings['vk']['group_id']
-        )
-        self.ok = OkSender(
-            access_token=self.settings['ok']['access_token'],
-            application_key=self.settings['ok']['application_key'],
-            application_secret_key=self.settings['ok']['application_secret_key'],
-            group_id=self.settings['ok']['group_id']
-        )
+        if telegram:
+            self.tg = TelegramSender(
+                token=self.settings['telegram']['bot_token'],
+                chat_id=self.settings['telegram']['chat_id'],
+                group_name=self.settings['telegram']['group_name']
+            )
+        if vk:
+            self.vk = VkSender(
+                token=self.settings['vk']['token'],
+                group_id=self.settings['vk']['group_id']
+            )
+        if ok:
+            self.ok = OkSender(
+                access_token=self.settings['ok']['access_token'],
+                application_key=self.settings['ok']['application_key'],
+                application_secret_key=self.settings['ok']['application_secret_key'],
+                group_id=self.settings['ok']['group_id']
+            )
 
-    async def send_article(self, telegram=True, vk=True, ok=True):
+    async def send_article(self, telegram=True, vk=True, ok=True) -> None:
         send_to = []
 
         if self.files:
             self.separate_files()
 
-        if telegram:
+        if telegram and hasattr(self, 'tg'):
             send_to.append(
                 self.tg.send_article(text=self.text, title=self.title, photos=self.photos, videos=self.videos)
             )
-        if vk:
+        if vk and hasattr(self, 'vk'):
             send_to.append(
                 self.vk.send_article(text=self.text, title=self.title, photos=self.photos, videos=self.videos,
                                      delayed_post_date=self.delayed_post_date)
             )
-        if ok:
+        if ok and hasattr(self, 'ok'):
             send_to.append(
-                self.ok.send_article(text=self.text, title=self.title, photos=self.photos,
+                self.ok.send_article(text=self.text, title=self.title, photos=self.photos, videos=self.videos,
                                      delayed_post_date=self.delayed_post_date)
             )
 
@@ -59,7 +62,7 @@ class SocialMediaPoster:
 
         await session.close()
 
-    def separate_files(self):
+    def separate_files(self) -> None:
         pic_extensions = ('jpg', 'jpeg', 'png', 'webp')
         vid_extensions = ('mp4', '3gp', 'avi', 'mov')
 
@@ -71,7 +74,7 @@ class SocialMediaPoster:
             elif file_extension.lower().endswith(vid_extensions):
                 self.videos.append(file)
 
-    def clear_files(self):
+    def clear_files(self) -> None:
         self.files.clear()
         self.photos.clear()
         self.videos.clear()

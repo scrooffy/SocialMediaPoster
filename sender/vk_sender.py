@@ -14,7 +14,7 @@ class VkSender(Sender):
         self.group_id = group_id
         self.result = ''
 
-    async def send_article(self, title='', text='', photos=None, videos=None, delayed_post_date=None):
+    async def send_article(self, title='', text='', photos=None, videos=None, delayed_post_date=None) -> str:
         await super().send_article(title=title, text=text, photos=photos, videos=videos)
         if videos is None:
             videos = []
@@ -51,7 +51,7 @@ class VkSender(Sender):
                     await self.post_request(params, session, url)
             return self.result
 
-    async def post_request(self, params, session, url, return_link=False):
+    async def post_request(self, params: dict, session: aiohttp.ClientSession, url: str, return_link=False) -> None:
         async with session.post(url, data=params, ssl=False) as response:
             data = await response.read()
             post_id = None
@@ -78,7 +78,7 @@ class VkSender(Sender):
             else:
                 self.result += 'Что то определенно не так c VK ☉ ‿ ⚆'
 
-    async def upload_media(self, pics, vids, attachmnts, session):
+    async def upload_media(self, pics: list, vids: list, attachmnts: list, session: aiohttp.ClientSession) -> tuple:
         if ceil((len(pics) + len(vids)) / 10) == 1:
             if vids:
                 for vid in vids:
@@ -110,9 +110,9 @@ class VkSender(Sender):
                     attachmnts += await self.upload_photos(pics[:sizeof_media], session)
                     pics = pics[sizeof_media:]
 
-        return [pics, vids, attachmnts]
+        return pics, vids, attachmnts
 
-    async def upload_photos(self, photos, session):
+    async def upload_photos(self, photos: list, session: aiohttp.ClientSession) -> list:
         attachments = []
         upload_url = f'https://api.vk.com/method/photos.getWallUploadServer'
         params = {
@@ -162,7 +162,7 @@ class VkSender(Sender):
 
         return attachments
 
-    async def upload_video(self, video, session):
+    async def upload_video(self, video: str, session: aiohttp.ClientSession) -> list:
         url = 'https://api.vk.com/method/video.save'
         params = {
             'access_token': self.token,
