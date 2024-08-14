@@ -53,13 +53,56 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.delayed_time.setEnabled(False)
         self.delayed_post_check.stateChanged.connect(self.delayed_date_state_changed)
 
-        with open('settings/settings_test.json') as f:
-            smp_settings = json.load(f)
-        self.poster = SocialMediaPoster(settings=smp_settings)
+        create_tg, create_vk, create_ok = (True, True, True)
+        with open('settings/settings.json') as f:
+            try:
+                smp_settings = json.load(f)
+
+                create_tg = 'telegram' in smp_settings and all((
+                        'bot_token' in smp_settings['telegram'],
+                        'chat_id' in smp_settings['telegram'],
+                        'group_name' in smp_settings['telegram']))
+
+                create_vk = 'vk' in smp_settings and all((
+                        'token' in smp_settings['vk'],
+                        'group_id' in smp_settings['vk']))
+
+                create_ok = 'ok' in smp_settings and all((
+                        'access_token' in smp_settings['ok'],
+                        'application_key' in smp_settings['ok'],
+                        'application_secret_key' in smp_settings['ok'],
+                        'group_id' in smp_settings['ok']))
+            except json.decoder.JSONDecodeError:
+                smp_settings = None
+                create_tg, create_vk, create_ok = (False, False, False)
+            finally:
+                if not create_tg:
+                    self.telegram_checkbox.setEnabled(False)
+                    self.telegram_checkbox.setChecked(False)
+                    tg_font = self.telegram_checkbox.font()
+                    tg_font.setStrikeOut(True)
+                    self.telegram_checkbox.setFont(tg_font)
+                if not create_vk:
+                    self.vk_checkbox.setEnabled(False)
+                    self.vk_checkbox.setChecked(False)
+                    vk_font = self.vk_checkbox.font()
+                    vk_font.setStrikeOut(True)
+                    self.vk_checkbox.setFont(vk_font)
+                if not create_ok:
+                    self.ok_checkbox.setEnabled(False)
+                    self.ok_checkbox.setChecked(False)
+                    ok_font = self.ok_checkbox.font()
+                    ok_font.setStrikeOut(True)
+                    self.ok_checkbox.setFont(ok_font)
+
+                if not all((create_tg, create_vk, create_ok)):
+                    self.send_button.setEnabled(False)
+
+        self.poster = SocialMediaPoster(telegram=create_tg, vk=create_vk, ok=create_ok, settings=smp_settings)
         self.files = list()
 
     @asyncSlot()
-    async def send_to_social_media(self):
+    async def send_to_social_media(self) -> None:
         self.poster.title = self.article_title.text().strip()
         self.poster.text = self.article_text.toPlainText().strip()
         self.poster.files = self.files.copy()
@@ -90,15 +133,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.send_button.setText('Отправить')
 
     @asyncSlot()
-    async def view_results(self, header=None):
+    async def view_results(self, header=None) -> None:
         header = 'Спокуха, всё под контролем' if header is None else header
+        results = self.get_results()
 
         result_dlg = QMessageBox(self)
-        if self.poster.tg.result or self.poster.vk.result or self.poster.ok.result:
+        if any(results):
             result_dlg.setWindowTitle(header)
-            result_dlg.setText(f'{self.poster.tg.result}\n{self.poster.vk.result}\n{self.poster.ok.result}')
+            result_dlg.setText('\n'.join(results))
         else:
-            result_dlg.setWindowTitle(header+' (наверное?)')
+            result_dlg.setWindowTitle(header + ' (наверное?)')
             result_dlg.setText('Ссылки, как истинные мудрецы, предпочитают оставаться в тени, '
                                'чтобы не подвергаться искажениям и неверным интерпретациям. (ง ͠ಥ_ಥ)ง')
         copy_button = result_dlg.addButton('Копировать результаты', QMessageBox.ActionRole)
@@ -108,11 +152,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         result_dlg.setIcon(QMessageBox.Information)
         result_dlg.exec()
 
-    def copy_results(self):
-        result = f'{self.poster.tg.result}\n{self.poster.vk.result}\n{self.poster.ok.result}'
-        pyperclip.copy(result)
+    @asyncSlot()
+    async def copy_results(self) -> None:
+        if any(results := self.get_results()):
+            result = '\n'.join(results)
+            pyperclip.copy(result)
+        else:
+            await self.error_window('Нет данных для копирования')
 
-    def open_file_dialog(self):
+    def get_results(self) -> list:
+        results = []
+        if hasattr(self.poster, 'tg') and self.poster.tg.result != '':
+            results.append(self.poster.tg.result)
+        if hasattr(self.poster, 'vk') and self.poster.vk.result != '':
+            results.append(self.poster.vk.result)
+        if hasattr(self.poster, 'ok') and self.poster.ok.result != '':
+            results.append(self.poster.ok.result)
+
+        return results
+
+    def open_file_dialog(self) -> None:
         file_dialog = QFileDialog()
         file_dialog.setFileMode(QFileDialog.ExistingFiles)
         file_dialog.setNameFilter("Медиа (*.png *.jpg *.jpeg *.mp4 *.avi *.3gp)")
@@ -121,29 +180,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             filenames = file_dialog.selectedFiles()
             self.update_img_paths(filenames)
 
-    def dragEnterEvent(self, event) -> None:
+    def dragEnterEvent(self, event: QtGui.QDragMoveEvent) -> None:
         if event.mimeData().hasUrls():
             event.accept()
         else:
             event.ignore()
 
-    def dragMoveEvent(self, event) -> None:
+    def dragMoveEvent(self, event: QtGui.QDragMoveEvent) -> None:
         if event.mimeData().hasUrls():
             event.accept()
         else:
             event.ignore()
 
-    def dropEvent(self, event) -> None:
+    def dropEvent(self, event: QtGui.QDragMoveEvent) -> None:
         if event.mimeData().hasUrls():
             event.setDropAction(Qt.CopyAction)
             filenames = [url.toLocalFile() for url in event.mimeData().urls()]
             self.update_img_paths(filenames)
-
             event.accept()
         else:
             event.ignore()
 
-    def update_img_paths(self, filenames):
+    def update_img_paths(self, filenames: list) -> None:
         # For the uniqueness of uploaded files
         [self.files.append(i) for i in filenames if i not in self.files]
         self.files.sort()
@@ -151,19 +209,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.file_listWidget.clear()
         self.file_listWidget.addItems(self.files)
 
-    def remove_file(self):
+    def remove_file(self) -> None:
         selected_item = self.file_listWidget.currentItem()
         if selected_item:
             self.file_listWidget.takeItem(self.file_listWidget.row(selected_item))
             self.files.remove(selected_item.text())
 
-    def update_file_buttons_state(self):
+    def update_file_buttons_state(self) -> None:
         is_selected_items = len(self.file_listWidget.selectedItems()) > 0
         self.delete_file_button.setEnabled(is_selected_items)
         self.file_order_up.setEnabled(is_selected_items)
         self.file_order_down.setEnabled(is_selected_items)
 
-    def move_file_up(self):
+    def move_file_up(self) -> None:
         current_row = self.file_listWidget.currentRow()
         if current_row > 0:
             current_item = self.file_listWidget.takeItem(current_row)
@@ -171,7 +229,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.file_listWidget.setCurrentRow(current_row - 1)
             self.files.insert(current_row - 1, self.files.pop(current_row))
 
-    def move_file_down(self):
+    def move_file_down(self) -> None:
         current_row = self.file_listWidget.currentRow()
         if current_row < self.file_listWidget.count() - 1:
             current_item = self.file_listWidget.takeItem(current_row)
@@ -179,19 +237,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.file_listWidget.setCurrentRow(current_row + 1)
             self.files.insert(current_row + 1, self.files.pop(current_row))
 
-    def delayed_date_state_changed(self):
+    def delayed_date_state_changed(self) -> None:
         if self.delayed_post_check.isChecked():
             self.delayed_time.setEnabled(True)
             self.telegram_checkbox.setEnabled(False)
         else:
             self.delayed_time.setEnabled(False)
-            self.telegram_checkbox.setEnabled(True)
+            if hasattr(self.poster, 'tg'):
+                self.telegram_checkbox.setEnabled(True)
 
-    def get_timestamp(self):
+    def get_timestamp(self) -> float:
         return self.delayed_time.dateTime().toPython().timestamp()
 
     @asyncSlot()
-    async def about_window(self):
+    async def about_window(self) -> None:
         about_dlg = QMessageBox(self)
         about_dlg.setWindowTitle('Об авторе')
         about_dlg.setText('Разработчик: Косицин Илья\n'
@@ -210,16 +269,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         about_dlg.setIcon(QMessageBox.Critical)
         about_dlg.exec()
 
-    def format_text(self):
-        many_spaces_pattern = re.compile(r' {2,}|\t+')  # 2 and more whitespaces or one and more tabs
+    def format_text(self) -> None:
+        many_spaces_pattern = re.compile(r' {2,}|\t+')                   # 2 and more whitespaces or one and more tabs
         formatted_text = re.sub(many_spaces_pattern, ' ', self.article_text.toPlainText().strip())
-        formatted_text = re.sub(r'^\s+', '', formatted_text, flags=re.MULTILINE)    # spaces after newline
-        formatted_text = re.sub(r'\s+\n', '\n', formatted_text)  # spaces before newline
+        formatted_text = re.sub(r'^\s+', '', formatted_text, flags=re.MULTILINE)   # spaces after newline
+        formatted_text = re.sub(r'\s+\n', '\n', formatted_text)                   # spaces before newline
         formatted_text = re.sub(r'\n+', '\n\n', formatted_text)  # newlines(1 or more) to double newlines
         self.article_text.setPlainText(formatted_text)
         self.article_title.setText(re.sub(many_spaces_pattern, ' ', self.article_title.text().strip()))
 
-    def clear_all(self):
+    def clear_all(self) -> None:
         self.article_text.setPlainText('')
         self.article_title.setText('')
         self.file_listWidget.clear()
