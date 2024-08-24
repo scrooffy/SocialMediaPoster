@@ -1,6 +1,6 @@
 # Social Media Poster
 
-![UI](images/screenshot.png)  
+<img alt="UI" height="501" src="images/screenshot.png" width="400"/>
 
 Simple software for creating an article and sending it to Telegram channel, vk.com and ok.ru groups.  
 
@@ -21,6 +21,7 @@ Simple software for creating an article and sending it to Telegram channel, vk.c
  2. Run commands in terminal:
 	```bash  
 	git clone https://github.com/scrooffy/SocialMediaPoster.git
+	cd SocialMediaPoster
 	# create virtual environment  
 	python -m venv venv
 	# For Windows:  
@@ -71,7 +72,7 @@ For the application to work properly, you need to add api tokens and other setti
 
  1. [Create a bot](https://core.telegram.org/bots/features#creating-a-new-bot) and copy token to `bot_token` field
  2. Add new bot to your channel
- 3. Find the channel ID (maybe [this bot](https://t.me/username_to_id_bot) will help) and copy it to `chat_id` field (**IMPORTANT: add a minus "-" to beginning of string**)
+ 3. Find the channel ID (maybe [this bot](https://t.me/username_to_id_bot) will help) and copy it to `chat_id` field
  4. Copy nickname of channel to `group_name` without @
 
 ### VK
@@ -79,7 +80,9 @@ For the application to work properly, you need to add api tokens and other setti
  1. [Create app](https://dev.vk.com/ru/admin/apps-list)
  2. Move to application settings and copy ID
  3. In this link, insert copied ID instead of `<app_id>`:
-	`https://oauth.vk.com/authorize?client_id=<app_id>&redirect_uri=https://api.vk.com/blank.html&scope=offline,wall,photos,video&response_type=token`
+	```
+	https://oauth.vk.com/authorize?client_id=<app_id>&redirect_uri=https://api.vk.com/blank.html&scope=offline,wall,photos,video&response_type=token
+	```
 4. Paste the ready link into the browser and press Enter
 5. Your token is in the browser's link field after `token=`
 6. Copy this token to `token` field
