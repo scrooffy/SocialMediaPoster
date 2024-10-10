@@ -55,7 +55,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.delayed_post_check.stateChanged.connect(self.delayed_date_state_changed)
 
         create_tg, create_vk, create_ok, create_hf = (True, True, True, True)
-        with open('settings/settings_test.json') as f:
+        with open('settings/settings.json') as f:
             try:
                 smp_settings = json.load(f)
 

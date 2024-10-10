@@ -80,7 +80,7 @@ class SocialMediaPoster:
 
 
 async def main():
-    with open('../settings/settings_test.json') as f:
+    with open('settings/settings.json') as f:
         smp_settings = json.load(f)
     a = SocialMediaPoster(settings=smp_settings)
     a.text = 'test text'
