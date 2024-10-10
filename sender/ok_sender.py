@@ -20,10 +20,16 @@ class OkSender(Sender):
         )
 
         self.result = ''
+        self.links = None
 
-    async def send_article(self, title='', text='', photos=None, videos=None, delayed_post_date=None) -> str:
+    async def send_article(self, title='', text='', photos=None, videos=None, delayed_post_date=None, get_links=False,
+                           return_links=False) -> dict | None:
         await super().send_article(title=title, text=text, photos=photos, videos=videos)
         self.result = ''
+        self.links = {
+            'photos': [],
+            'videos': []
+        }
 
         upload = Upload(self.ok_api)
 
@@ -83,4 +89,4 @@ class OkSender(Sender):
             post_id = post.content.decode("utf-8").replace("\"", "")
             self.result = f'https://ok.ru/group/{self.group_id}/topic/{post_id}'
 
-        return self.result
+        return self.links if return_links else None

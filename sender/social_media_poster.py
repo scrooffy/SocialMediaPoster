@@ -38,27 +38,26 @@ class SocialMediaPoster:
 
     async def send_article(self, telegram=True, vk=True, ok=True) -> None:
         send_to = []
+        gathering_list = []
+
+        if hasattr(self, 'vk'):
+            send_to.append((vk, self.vk.send_article))
+        if hasattr(self, 'tg'):
+            send_to.append((telegram, self.tg.send_article))
+        if hasattr(self, 'ok'):
+            send_to.append((ok, self.ok.send_article))
 
         if self.files:
             self.separate_files()
 
-        if telegram and hasattr(self, 'tg'):
-            send_to.append(
-                self.tg.send_article(text=self.text, title=self.title, photos=self.photos, videos=self.videos)
-            )
-        if vk and hasattr(self, 'vk'):
-            send_to.append(
-                self.vk.send_article(text=self.text, title=self.title, photos=self.photos, videos=self.videos,
-                                     delayed_post_date=self.delayed_post_date)
-            )
-        if ok and hasattr(self, 'ok'):
-            send_to.append(
-                self.ok.send_article(text=self.text, title=self.title, photos=self.photos, videos=self.videos,
-                                     delayed_post_date=self.delayed_post_date)
-            )
+        for send, social_media in send_to:
+            if send:
+                gathering_list.append(
+                    social_media(text=self.text, title=self.title, photos=self.photos, videos=self.videos,
+                                 delayed_post_date=self.delayed_post_date))
 
         async with aiohttp.ClientSession() as session:
-            await asyncio.gather(*send_to)
+            await asyncio.gather(*gathering_list)
 
         await session.close()
 
@@ -81,16 +80,13 @@ class SocialMediaPoster:
 
 
 async def main():
-    with open('settings/settings_test.json') as f:
+    with open('../settings/settings_test.json') as f:
         smp_settings = json.load(f)
     a = SocialMediaPoster(settings=smp_settings)
     a.text = 'test text'
     a.title = 'test title'
-    # a.delayed_post_date = 1712055098
-    # a.videos.append('vid.mp4')
-    # a.photos.append('/Users/scrooffy/Downloads/scale1200.jpg')
 
-    await a.send_article(telegram=False, vk=False, ok=True)
+    await a.send_article(telegram=False, vk=True, ok=False)
 
 
 if __name__ == '__main__':

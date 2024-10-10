@@ -37,14 +37,21 @@ def split_into_chunks(text: str, chunk_size=4096) -> list:
 
 class TelegramSender(Sender):
     def __init__(self, token=None, chat_id=None, group_name=None):
+        self.token = token
         self.bot = Bot(token=token)
-        self.chat_id = chat_id
+        self.chat_id = '-' + chat_id
         self.group_name = group_name
         self.result = ''
+        self.links = None
 
-    async def send_article(self, title='', text='', photos=None, videos=None) -> str:
+    async def send_article(self, title='', text='', photos=None, videos=None, delayed_post_date=None, get_links=False,
+                           return_links=False) -> dict | None:
         await super().send_article(title=title, text=text, photos=photos, videos=videos)
         self.result = ''
+        self.links = {
+            'photos': [],
+            'videos': []
+        }
 
         processed_title = f'<b>{title}</b>\n\n' if title else ''
         article = processed_title + text if title else text
@@ -65,24 +72,33 @@ class TelegramSender(Sender):
         files_count = 0
         current_group = 0
         if videos:
-            files_count, curr_group = self.add_videos(videos, media_groups, files_count, current_group)
+            files_count, curr_group = self.add_videos(videos, media_groups, files_count, current_group,
+                                                      get_links=get_links)
         if photos:
-            self.add_photos(photos, media_groups, files_count, current_group)
+            self.add_photos(photos, media_groups, files_count, current_group, get_links=get_links)
 
         try:
             # If send just a media group, message_id accessible in msg[0].message_id, otherwise msg.message_id
+            msg = None
             msg_id = None
             if photos or videos:
                 for group in media_groups:
+                    # If small text and have media (media with caption)
                     msg = await self.bot.send_media_group(self.chat_id, media=group.build())
-                    msg_id = msg[0].message_id
+                    if return_links:
+                        new_photo_links, new_video_links = await self.get_links(msg)
+                        self.links['photos'] += new_photo_links
+                        self.links['videos'] += new_video_links
+                    if group.caption:
+                        msg_id = msg[0].message_id
                 if not (is_caption_text or is_long_read):
+                    # If the text is longer than 1024 chars, send them separately
                     msg = await self.bot.send_message(self.chat_id, article, parse_mode='HTML')
-                    msg_id = msg.message_id
             elif (is_caption_text or not is_long_read) and not (photos or videos):
+                # Just sends text
                 msg = await self.bot.send_message(self.chat_id, article, parse_mode='HTML')
-                msg_id = msg.message_id
             if is_long_read:
+                # If article bigger then 4096 chars (or value of chunk_size), separate them to several messages
                 articles = split_into_chunks(text, chunk_size=3500)
                 articles[0] = processed_title + articles[0]
                 msg = await self.bot.send_message(self.chat_id, articles[0], parse_mode='HTML')
@@ -93,17 +109,38 @@ class TelegramSender(Sender):
                                                       parse_mode='HTML')
                     previous_message_id = msg.message_id
 
+            if msg_id is None:
+                msg_id = msg.message_id
+
             self.result += f'https://t.me/{self.group_name}/{msg_id}'
         except Exception as e:
             self.result += f'Проблема отправки статьи в Telegram: {e}'
+            self.links = None
         finally:
             await self.bot.session.close()
-            return self.result
+            return self.links if return_links else None
 
-    def add_photos(self, photos: list, media_groups: list, files_count: int, curr_group: int) -> None:
+    async def get_links(self, message) -> tuple:
+        photos = []
+        videos = []
+
+        for media in message:
+            if media.photo:
+                photo = await self.bot.get_file(media.photo[-1].file_id)
+                link = f'https://api.telegram.org/file/bot{self.token}/{photo.file_path}'
+                photos.append(link)
+            elif media.video:
+                video = await self.bot.get_file(media.video.file_id)
+                link = f'https://api.telegram.org/file/bot{self.token}/{video.file_path}'
+                videos.append(link)
+
+        return photos, videos
+
+    def add_photos(self, photos: list, media_groups: list, files_count: int, curr_group: int, get_links=False) -> None:
         for photo in photos:
             try:
-                media_groups[curr_group].add_photo(FSInputFile(photo), parse_mode='HTML')
+                file = photo if get_links else FSInputFile(photo)
+                media_groups[curr_group].add_photo(file, parse_mode='HTML')
                 files_count += 1
                 if files_count == 10:
                     files_count = 0
@@ -111,10 +148,11 @@ class TelegramSender(Sender):
             except Exception as e:
                 self.result += f"Ошибка отправки фото {photo}: {e}\n"
 
-    def add_videos(self, videos: list, media_groups: list, files_count: int, curr_group: int) -> tuple:
+    def add_videos(self, videos: list, media_groups: list, files_count: int, curr_group: int, get_links=False) -> tuple:
         for video in videos:
             try:
-                media_groups[curr_group].add_video(FSInputFile(video), parse_mode='HTML', supports_streaming=True)
+                file = video if get_links else FSInputFile(video)
+                media_groups[curr_group].add_video(file, parse_mode='HTML', supports_streaming=True)
                 files_count += 1
                 if files_count == 10:
                     files_count = 0

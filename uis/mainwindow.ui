@@ -60,7 +60,7 @@
      </rect>
     </property>
     <property name="orientation">
-     <enum>Qt::Horizontal</enum>
+     <enum>Qt::Orientation::Horizontal</enum>
     </property>
    </widget>
    <widget class="QWidget" name="layoutWidget">
@@ -74,14 +74,16 @@
     </property>
     <layout class="QGridLayout" name="gridLayout">
      <property name="sizeConstraint">
-      <enum>QLayout::SetDefaultConstraint</enum>
+      <enum>QLayout::SizeConstraint::SetDefaultConstraint</enum>
      </property>
-     <item row="1" column="2" rowspan="9" colspan="3">
-      <widget class="QPlainTextEdit" name="article_text">
+     <item row="0" column="2" colspan="3">
+      <widget class="QLineEdit" name="article_title">
        <property name="font">
         <font>
          <family>Times New Roman</family>
          <pointsize>10</pointsize>
+         <bold>true</bold>
+         <stylestrategy>PreferAntialias</stylestrategy>
         </font>
        </property>
        <property name="acceptDrops">
@@ -89,82 +91,14 @@
        </property>
       </widget>
      </item>
-     <item row="14" column="1" rowspan="3">
-      <layout class="QGridLayout" name="gridLayout_4">
-       <item row="2" column="2">
-        <widget class="QPushButton" name="delete_file_button">
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>Удалить файл</string>
-         </property>
-         <property name="checkable">
-          <bool>false</bool>
-         </property>
-         <property name="default">
-          <bool>false</bool>
-         </property>
-         <property name="flat">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QPushButton" name="images_file_dialog">
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>Добавить файл(ы)</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="2">
-        <spacer name="verticalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </item>
-     <item row="5" column="1">
-      <widget class="QDateTimeEdit" name="delayed_time"/>
-     </item>
-     <item row="0" column="1">
-      <widget class="QLabel" name="article_title_label">
+     <item row="2" column="1">
+      <widget class="QPushButton" name="format_text_button">
        <property name="text">
-        <string>Заголовок статьи:</string>
+        <string>Форматировать текст</string>
        </property>
       </widget>
      </item>
-     <item row="3" column="1">
-      <spacer name="verticalSpacer">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>20</width>
-         <height>40</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item row="14" column="2">
+     <item row="15" column="2">
       <widget class="QListWidget" name="file_listWidget">
        <property name="maximumSize">
         <size>
@@ -177,21 +111,14 @@
      <item row="1" column="1">
       <widget class="QLabel" name="article_text_label">
        <property name="layoutDirection">
-        <enum>Qt::LeftToRight</enum>
+        <enum>Qt::LayoutDirection::LeftToRight</enum>
        </property>
        <property name="text">
         <string>Текст статьи:</string>
        </property>
       </widget>
      </item>
-     <item row="6" column="1">
-      <widget class="QLabel" name="send_to_label">
-       <property name="text">
-        <string>Отправить в:</string>
-       </property>
-      </widget>
-     </item>
-     <item row="14" column="4">
+     <item row="15" column="4">
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
         <widget class="QPushButton" name="file_order_up">
@@ -231,14 +158,49 @@
        </item>
       </layout>
      </item>
-     <item row="0" column="2" colspan="3">
-      <widget class="QLineEdit" name="article_title">
+     <item row="7" column="1">
+      <widget class="QLabel" name="send_to_label">
+       <property name="text">
+        <string>Отправить в:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="QCheckBox" name="delayed_post_check">
+       <property name="text">
+        <string>Отложенный пост</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <widget class="QDateTimeEdit" name="delayed_time"/>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLabel" name="article_title_label">
+       <property name="text">
+        <string>Заголовок статьи:</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <spacer name="verticalSpacer">
+       <property name="orientation">
+        <enum>Qt::Orientation::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="1" column="2" rowspan="10" colspan="3">
+      <widget class="QPlainTextEdit" name="article_text">
        <property name="font">
         <font>
          <family>Times New Roman</family>
          <pointsize>10</pointsize>
-         <bold>true</bold>
-         <stylestrategy>PreferAntialias</stylestrategy>
         </font>
        </property>
        <property name="acceptDrops">
@@ -246,14 +208,7 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
-      <widget class="QCheckBox" name="delayed_post_check">
-       <property name="text">
-        <string>Отложенный пост</string>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="1">
+     <item row="8" column="1">
       <layout class="QVBoxLayout" name="send_to_layout">
        <item>
         <widget class="QCheckBox" name="telegram_checkbox">
@@ -287,10 +242,62 @@
        </item>
       </layout>
      </item>
-     <item row="2" column="1">
-      <widget class="QPushButton" name="format_text_button">
+     <item row="15" column="1" rowspan="3">
+      <layout class="QGridLayout" name="gridLayout_4">
+       <item row="2" column="2">
+        <widget class="QPushButton" name="delete_file_button">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Удалить файл</string>
+         </property>
+         <property name="checkable">
+          <bool>false</bool>
+         </property>
+         <property name="default">
+          <bool>false</bool>
+         </property>
+         <property name="flat">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QPushButton" name="images_file_dialog">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Добавить файл(ы)</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="2">
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </item>
+     <item row="3" column="1">
+      <widget class="QPushButton" name="add_emojis_button">
        <property name="text">
-        <string>Форматировать текст</string>
+        <string>Добавить смайлики</string>
        </property>
       </widget>
      </item>
@@ -323,7 +330,7 @@
      <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+        <enum>Qt::Orientation::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
@@ -358,7 +365,7 @@
      <x>0</x>
      <y>0</y>
      <width>540</width>
-     <height>21</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu">

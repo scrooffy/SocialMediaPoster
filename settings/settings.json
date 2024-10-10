@@ -14,5 +14,8 @@
     "application_secret_key": "",
     "session_secret_key": "do not need",
     "group_id": ""
+  },
+  "hf":{
+    "token": ""
   }
 }

@@ -16,7 +16,8 @@ import pyperclip
 #     pyside2-uic form.ui -o ui_form.py
 from uis.ui_form import Ui_MainWindow
 
-from social_media_poster import SocialMediaPoster
+from sender.social_media_poster import SocialMediaPoster
+from hf_handler import HfHandler
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -53,8 +54,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.delayed_time.setEnabled(False)
         self.delayed_post_check.stateChanged.connect(self.delayed_date_state_changed)
 
-        create_tg, create_vk, create_ok = (True, True, True)
-        with open('settings/settings.json') as f:
+        create_tg, create_vk, create_ok, create_hf = (True, True, True, True)
+        with open('settings/settings_test.json') as f:
             try:
                 smp_settings = json.load(f)
 
@@ -72,9 +73,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         'application_key' in smp_settings['ok'],
                         'application_secret_key' in smp_settings['ok'],
                         'group_id' in smp_settings['ok']))
+
+                create_hf = 'hf' in smp_settings and 'token' in smp_settings['hf']
+
             except json.decoder.JSONDecodeError:
                 smp_settings = None
-                create_tg, create_vk, create_ok = (False, False, False)
+                create_tg, create_vk, create_ok, create_hf = (False, False, False, False)
             finally:
                 if not create_tg:
                     self.telegram_checkbox.setEnabled(False)
@@ -94,6 +98,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     ok_font = self.ok_checkbox.font()
                     ok_font.setStrikeOut(True)
                     self.ok_checkbox.setFont(ok_font)
+                if create_hf:
+                    self.hf_inference = HfHandler(smp_settings)
+                    self.add_emojis_button.clicked.connect(self.add_emojis_and_tags)
+                else:
+                    hf_font = self.add_emojis_button.font()
+                    hf_font.setStrikeOut(True)
+                    self.add_emojis_button.setFont(hf_font)
+                    self.add_emojis_button.setEnabled(False)
 
                 if not all((create_tg, create_vk, create_ok)):
                     self.send_button.setEnabled(False)
@@ -159,6 +171,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             pyperclip.copy(result)
         else:
             await self.error_window('Нет данных для копирования')
+
+    @asyncSlot()
+    async def add_emojis_and_tags(self):
+        self.add_emojis_button.setEnabled(False)
+        self.add_emojis_button.setText('Думаю...')
+
+        title = self.article_title.text()
+        text = self.article_text.toPlainText()
+        article = title + text if title else text
+        try:
+            out_article = self.hf_inference.add_emojis_and_tags(article)
+            if title:
+                out_title, out_text = out_article.split('\n\n', maxsplit=1)
+                self.article_title.setText(out_title)
+                self.article_text.setPlainText(out_text)
+            else:
+                self.article_text.setPlainText(out_article)
+        except Exception:
+            await self.error_window('Проблема соединения с Huggingface')
+
+        self.add_emojis_button.setEnabled(True)
+        self.add_emojis_button.setText('Добавить смайлики')
 
     def get_results(self) -> list:
         results = []
@@ -270,7 +304,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         about_dlg.exec()
 
     def format_text(self) -> None:
-        many_spaces_pattern = re.compile(r' {2,}|\t+')                   # 2 and more whitespaces or one and more tabs
+        many_spaces_pattern = re.compile(r' {2,}|\t+')                  # 2 and more whitespaces or one and more tabs
         formatted_text = re.sub(many_spaces_pattern, ' ', self.article_text.toPlainText().strip())
         formatted_text = re.sub(r'^\s+', '', formatted_text, flags=re.MULTILINE)   # spaces after newline
         formatted_text = re.sub(r'\s+\n', '\n', formatted_text)                   # spaces before newline
