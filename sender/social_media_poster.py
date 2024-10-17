@@ -80,13 +80,13 @@ class SocialMediaPoster:
 
 
 async def main():
-    with open('settings/settings.json') as f:
+    with open('../settings/settings_test.json') as f:
         smp_settings = json.load(f)
     a = SocialMediaPoster(settings=smp_settings)
-    a.text = 'test text'
     a.title = 'test title'
+    a.text = 'test text'
 
-    await a.send_article(telegram=False, vk=True, ok=False)
+    await a.send_article(telegram=False, vk=False, ok=True)
 
 
 if __name__ == '__main__':

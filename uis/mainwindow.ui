@@ -297,7 +297,7 @@
      <item row="3" column="1">
       <widget class="QPushButton" name="add_emojis_button">
        <property name="text">
-        <string>Добавить смайлики</string>
+        <string>Обработать ИИ</string>
        </property>
       </widget>
      </item>
@@ -323,7 +323,7 @@
      <item>
       <widget class="QPushButton" name="remember_links_button">
        <property name="text">
-        <string> АААААА Я ЗАБЫЛ ССЫЛКИИ!!!!!11!</string>
+        <string>Показать ссылки</string>
        </property>
       </widget>
      </item>

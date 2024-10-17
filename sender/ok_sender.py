@@ -1,6 +1,6 @@
 import json
 from typing import Any
-from pathlib import Path
+# from pathlib import Path
 
 from ok_api import OkApi, Upload
 from sender.sender import Sender

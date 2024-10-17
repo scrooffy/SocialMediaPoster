@@ -254,9 +254,9 @@ class Ui_MainWindow(object):
         self.ok_checkbox.setText(QCoreApplication.translate("MainWindow", u"OK.ru", None))
         self.delete_file_button.setText(QCoreApplication.translate("MainWindow", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0444\u0430\u0439\u043b", None))
         self.images_file_dialog.setText(QCoreApplication.translate("MainWindow", u"\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0444\u0430\u0439\u043b(\u044b)", None))
-        self.add_emojis_button.setText(QCoreApplication.translate("MainWindow", u"\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0441\u043c\u0430\u0439\u043b\u0438\u043a\u0438", None))
+        self.add_emojis_button.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0431\u0440\u0430\u0431\u043e\u0442\u0430\u0442\u044c \u0418\u0418", None))
         self.clear_all_button.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0447\u0438\u0441\u0442\u0438\u0442\u044c \u0432\u0441\u0451", None))
-        self.remember_links_button.setText(QCoreApplication.translate("MainWindow", u" \u0410\u0410\u0410\u0410\u0410\u0410 \u042f \u0417\u0410\u0411\u042b\u041b \u0421\u0421\u042b\u041b\u041a\u0418\u0418!!!!!11!", None))
+        self.remember_links_button.setText(QCoreApplication.translate("MainWindow", u"\u041f\u043e\u043a\u0430\u0437\u0430\u0442\u044c \u0441\u0441\u044b\u043b\u043a\u0438", None))
         self.send_button.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c", None))
         self.menu.setTitle(QCoreApplication.translate("MainWindow", u"\u0421\u043f\u0440\u0430\u0432\u043a\u0430", None))
     # retranslateUi

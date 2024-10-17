@@ -55,7 +55,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.delayed_post_check.stateChanged.connect(self.delayed_date_state_changed)
 
         create_tg, create_vk, create_ok, create_hf = (True, True, True, True)
-        with open('settings/settings.json') as f:
+        with open('settings/settings.json', encoding='utf_8_sig') as f:
             try:
                 smp_settings = json.load(f)
 
@@ -74,7 +74,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                         'application_secret_key' in smp_settings['ok'],
                         'group_id' in smp_settings['ok']))
 
-                create_hf = 'hf' in smp_settings and 'token' in smp_settings['hf']
+                create_hf = 'hf' in smp_settings and all((
+                    'token' in smp_settings['hf'],
+                    'model' in smp_settings['hf'],
+                    'system_prompt' in smp_settings['hf']))
 
             except json.decoder.JSONDecodeError:
                 smp_settings = None
@@ -98,8 +101,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     ok_font = self.ok_checkbox.font()
                     ok_font.setStrikeOut(True)
                     self.ok_checkbox.setFont(ok_font)
+
                 if create_hf:
-                    self.hf_inference = HfHandler(smp_settings)
+                    self.hf_inference = HfHandler(smp_settings['hf'])
                     self.add_emojis_button.clicked.connect(self.add_emojis_and_tags)
                 else:
                     hf_font = self.add_emojis_button.font()
@@ -188,8 +192,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.article_text.setPlainText(out_text)
             else:
                 self.article_text.setPlainText(out_article)
-        except Exception:
-            await self.error_window('Проблема соединения с Huggingface')
+        except Exception as e:
+            await self.error_window(f'Проблема соединения с Huggingface:\n + {repr(e)}')
 
         self.add_emojis_button.setEnabled(True)
         self.add_emojis_button.setText('Добавить смайлики')
