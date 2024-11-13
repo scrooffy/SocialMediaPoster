@@ -99,7 +99,7 @@ class TelegramSender(Sender):
                 msg = await self.bot.send_message(self.chat_id, article, parse_mode='HTML')
             if is_long_read:
                 # If article bigger then 4096 chars (or value of chunk_size), separate them to several messages
-                articles = split_into_chunks(text, chunk_size=3500)
+                articles = split_into_chunks(text, chunk_size=4000)
                 articles[0] = processed_title + articles[0]
                 msg = await self.bot.send_message(self.chat_id, articles[0], parse_mode='HTML')
                 msg_id, previous_message_id = [msg.message_id] * 2  # The same values for both variables

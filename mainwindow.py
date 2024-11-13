@@ -196,7 +196,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             await self.error_window(f'Проблема соединения с Huggingface:\n + {repr(e)}')
 
         self.add_emojis_button.setEnabled(True)
-        self.add_emojis_button.setText('Добавить смайлики')
+        self.add_emojis_button.setText('Обработать ИИ')
 
     def get_results(self) -> list:
         results = []

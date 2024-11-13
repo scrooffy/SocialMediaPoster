@@ -198,11 +198,13 @@ class Ui_MainWindow(object):
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
         self.clear_all_button = QPushButton(self.layoutWidget1)
         self.clear_all_button.setObjectName(u"clear_all_button")
+        self.clear_all_button.setMinimumSize(QSize(100, 0))
 
         self.horizontalLayout.addWidget(self.clear_all_button)
 
         self.remember_links_button = QPushButton(self.layoutWidget1)
         self.remember_links_button.setObjectName(u"remember_links_button")
+        self.remember_links_button.setMinimumSize(QSize(120, 0))
 
         self.horizontalLayout.addWidget(self.remember_links_button)
 
