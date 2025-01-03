@@ -185,7 +185,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         text = self.article_text.toPlainText()
         article = title + text if title else text
         try:
-            out_article = self.hf_inference.add_emojis_and_tags(article)
+            if self.legacy_hf_method_checkbox.isChecked():
+                out_article = self.hf_inference.add_emojis_and_tags(article)
+            else:
+                out_article = await self.hf_inference.add_emojis_and_tags_async(article)
+
             if title:
                 out_title, out_text = out_article.split('\n\n', maxsplit=1)
                 self.article_title.setText(out_title)
