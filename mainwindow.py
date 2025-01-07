@@ -197,7 +197,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             else:
                 self.article_text.setPlainText(out_article)
         except Exception as e:
-            await self.error_window(f'Проблема соединения с Huggingface:\n + {repr(e)}')
+            await self.error_window(f'Проблема соединения с Huggingface:\n{repr(e)}')
 
         self.add_emojis_button.setEnabled(True)
         self.add_emojis_button.setText('Обработать ИИ')
