@@ -42,7 +42,7 @@ class VkSender(Sender):
             }
 
             if delayed_post_date:
-                params['publish_date'] = delayed_post_date
+                params['publish_date'] = int(delayed_post_date)
 
             await self.post_request(params, session, url, return_link=True)
 
