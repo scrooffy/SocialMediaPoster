@@ -23,6 +23,12 @@ from hf_handler import HfHandler
 class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
+        self.poster = None
+        self.files = None
+        self.hf_inference = None
+        self.configure(settings_path='settings/settings.json')
+
+    def configure(self, settings_path):
         self.setupUi(self)
         app_icon = QIcon('icon256.png')
         self.setWindowIcon(app_icon)
@@ -55,24 +61,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.delayed_post_check.stateChanged.connect(self.delayed_date_state_changed)
 
         create_tg, create_vk, create_ok, create_hf = (True, True, True, True)
-        with open('settings/settings.json', encoding='utf_8_sig') as f:
+        with open(settings_path, encoding='utf_8_sig') as f:
             try:
                 smp_settings = json.load(f)
 
                 create_tg = 'telegram' in smp_settings and all((
-                        'bot_token' in smp_settings['telegram'],
-                        'chat_id' in smp_settings['telegram'],
-                        'group_name' in smp_settings['telegram']))
+                    'bot_token' in smp_settings['telegram'],
+                    'chat_id' in smp_settings['telegram'],
+                    'group_name' in smp_settings['telegram']))
 
                 create_vk = 'vk' in smp_settings and all((
-                        'token' in smp_settings['vk'],
-                        'group_id' in smp_settings['vk']))
+                    'token' in smp_settings['vk'],
+                    'group_id' in smp_settings['vk']))
 
                 create_ok = 'ok' in smp_settings and all((
-                        'access_token' in smp_settings['ok'],
-                        'application_key' in smp_settings['ok'],
-                        'application_secret_key' in smp_settings['ok'],
-                        'group_id' in smp_settings['ok']))
+                    'access_token' in smp_settings['ok'],
+                    'application_key' in smp_settings['ok'],
+                    'application_secret_key' in smp_settings['ok'],
+                    'group_id' in smp_settings['ok']))
 
                 create_hf = 'hf' in smp_settings and all((
                     'token' in smp_settings['hf'],
@@ -326,7 +332,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.file_listWidget.clear()
         self.files.clear()
         self.poster.clear_files()
-
 
 def main():
     app = QApplication(sys.argv)
