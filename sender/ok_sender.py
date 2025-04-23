@@ -73,7 +73,7 @@ class OkSender(Sender):
                 if hasattr(f, 'close'):
                     f.close()
 
-    async def _upload_video(self, session: aiohttp.ClientSession, video_path: str) -> Optional[str]:
+    async def _upload_video(self, session: aiohttp.ClientSession, video_path: str, video_name: str) -> Optional[str]:
         """Upload 1 video to OK.ru and return video ID"""
         try:
             params = {
@@ -81,7 +81,7 @@ class OkSender(Sender):
                 'access_token': self.access_token,
                 'method': 'video.getUploadUrl',
                 'gid': self.group_id,
-                'file_name': Path(video_path).name,
+                'file_name': video_name,
                 'file_size': 0,
                 'post_form': 'True'
             }
@@ -102,7 +102,7 @@ class OkSender(Sender):
             return video_id
 
         except Exception as e:
-            exception_text = f"Error uploading video: {e}"
+            exception_text = f"Error uploading video: {str(e)}"
             print(exception_text)
             self._concat_result(exception_text)
 
@@ -149,7 +149,8 @@ class OkSender(Sender):
         async with aiohttp.ClientSession() as session:
             video_ids = []
             for video_path in videos:
-                video_id = await self._upload_video(session, video_path)
+                video_name = title if title else Path(video_path).name
+                video_id = await self._upload_video(session, video_path, video_name)
                 if video_id:
                     video_ids.append(video_id)
             if video_ids:
@@ -172,7 +173,7 @@ class OkSender(Sender):
             params = {k: v for k, v in params.items() if v is not None}
 
             try:
-                async with session.get(self.api_url, params=params) as response:
+                async with session.post(self.api_url, data=params) as response:
                     result = await response.text('utf-8')
                     if 'error' in result:
                         error_msg = json.loads(result)['error_msg']
@@ -183,6 +184,6 @@ class OkSender(Sender):
                     print(self.result)
 
             except Exception as e:
-                exception_text = f"Error posting article: {e}"
+                exception_text = f"Error posting article: {str(e)}"
                 print(exception_text)
                 self._concat_result(exception_text)
