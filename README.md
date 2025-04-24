@@ -1,6 +1,8 @@
 # Social Media Poster
 
-<img alt="UI" height="501" src="images/screenshot.png" width="400"/>
+<div style="text-align: center;">
+    <img alt="UI" height="501" src="images/screenshot.png" width="400"/>
+</div>
 
 Simple software for creating an article and sending it to Telegram channel, vk.com and ok.ru groups.  
 
@@ -12,7 +14,7 @@ Simple software for creating an article and sending it to Telegram channel, vk.c
  
 **Doesn't work now**
  - Delayed posting to Telegram
- - Video upload to ok.ru
+ - ~~Video upload to ok.ru~~
 
  
 ## How to run
@@ -95,6 +97,7 @@ For the application to work properly, you need to add api tokens and other setti
 	2. LONG_ACCESS_TOKEN
 	3. PHOTO_CONTENT
 	4. GROUP_CONTENT
+    5. VIDEO_CONTENT
 2. Add access token to `access_token`
 3. Add application key to `application_key`
 4. Add application secret key to `application_secret_key`
