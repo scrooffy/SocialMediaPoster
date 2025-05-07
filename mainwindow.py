@@ -9,6 +9,7 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBo
 from PySide6.QtCore import Qt, QDateTime
 from qasync import QEventLoop, asyncSlot
 import pyperclip
+from aiogram.utils.token import TokenValidationError
 
 # Important:
 # You need to run the following command to generate the ui_form.py file
@@ -60,67 +61,70 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.delayed_time.setEnabled(False)
         self.delayed_post_check.stateChanged.connect(self.delayed_date_state_changed)
 
-        create_tg, create_vk, create_ok, create_hf = (True, True, True, True)
+        create_tg, create_vk, create_ok, create_hf = (False, False, False, False)
         with open(settings_path, encoding='utf_8_sig') as f:
             try:
                 smp_settings = json.load(f)
-
-                create_tg = 'telegram' in smp_settings and all((
-                    'bot_token' in smp_settings['telegram'],
-                    'chat_id' in smp_settings['telegram'],
-                    'group_name' in smp_settings['telegram']))
-
-                create_vk = 'vk' in smp_settings and all((
-                    'token' in smp_settings['vk'],
-                    'group_id' in smp_settings['vk']))
-
-                create_ok = 'ok' in smp_settings and all((
-                    'access_token' in smp_settings['ok'],
-                    'application_key' in smp_settings['ok'],
-                    'application_secret_key' in smp_settings['ok'],
-                    'group_id' in smp_settings['ok']))
-
-                create_hf = 'hf' in smp_settings and all((
-                    'token' in smp_settings['hf'],
-                    'model' in smp_settings['hf'],
-                    'system_prompt' in smp_settings['hf']))
-
             except json.decoder.JSONDecodeError:
                 smp_settings = None
-                create_tg, create_vk, create_ok, create_hf = (False, False, False, False)
-            finally:
-                if not create_tg:
-                    self.telegram_checkbox.setEnabled(False)
-                    self.telegram_checkbox.setChecked(False)
-                    tg_font = self.telegram_checkbox.font()
-                    tg_font.setStrikeOut(True)
-                    self.telegram_checkbox.setFont(tg_font)
-                if not create_vk:
-                    self.vk_checkbox.setEnabled(False)
-                    self.vk_checkbox.setChecked(False)
-                    vk_font = self.vk_checkbox.font()
-                    vk_font.setStrikeOut(True)
-                    self.vk_checkbox.setFont(vk_font)
-                if not create_ok:
-                    self.ok_checkbox.setEnabled(False)
-                    self.ok_checkbox.setChecked(False)
-                    ok_font = self.ok_checkbox.font()
-                    ok_font.setStrikeOut(True)
-                    self.ok_checkbox.setFont(ok_font)
 
-                if create_hf:
-                    self.hf_inference = HfHandler(smp_settings['hf'])
-                    self.add_emojis_button.clicked.connect(self.add_emojis_and_tags)
-                else:
-                    hf_font = self.add_emojis_button.font()
-                    hf_font.setStrikeOut(True)
-                    self.add_emojis_button.setFont(hf_font)
-                    self.add_emojis_button.setEnabled(False)
+        if smp_settings:
+            create_tg = 'telegram' in smp_settings and all((
+                'bot_token' in smp_settings['telegram'] and smp_settings['telegram']['bot_token'],
+                'chat_id' in smp_settings['telegram'],
+                'group_name' in smp_settings['telegram']))
 
-                if not all((create_tg, create_vk, create_ok)):
-                    self.send_button.setEnabled(False)
+            create_vk = 'vk' in smp_settings and all((
+                'token' in smp_settings['vk'],
+                'group_id' in smp_settings['vk']))
 
-        self.poster = SocialMediaPoster(telegram=create_tg, vk=create_vk, ok=create_ok, settings=smp_settings)
+            create_ok = 'ok' in smp_settings and all((
+                'access_token' in smp_settings['ok'],
+                'application_key' in smp_settings['ok'],
+                'application_secret_key' in smp_settings['ok'],
+                'group_id' in smp_settings['ok']))
+
+            create_hf = 'hf' in smp_settings and all((
+                'token' in smp_settings['hf'],
+                'model' in smp_settings['hf'],
+                'system_prompt' in smp_settings['hf']))
+
+        try:
+            self.poster = SocialMediaPoster(telegram=create_tg, vk=create_vk, ok=create_ok, settings=smp_settings)
+        except TokenValidationError:
+            create_tg = False
+            self.poster = SocialMediaPoster(telegram=create_tg, vk=create_vk, ok=create_ok, settings=smp_settings)
+
+        if not create_tg:
+            self.telegram_checkbox.setEnabled(False)
+            self.telegram_checkbox.setChecked(False)
+            tg_font = self.telegram_checkbox.font()
+            tg_font.setStrikeOut(True)
+            self.telegram_checkbox.setFont(tg_font)
+        if not create_vk:
+            self.vk_checkbox.setEnabled(False)
+            self.vk_checkbox.setChecked(False)
+            vk_font = self.vk_checkbox.font()
+            vk_font.setStrikeOut(True)
+            self.vk_checkbox.setFont(vk_font)
+        if not create_ok:
+            self.ok_checkbox.setEnabled(False)
+            self.ok_checkbox.setChecked(False)
+            ok_font = self.ok_checkbox.font()
+            ok_font.setStrikeOut(True)
+            self.ok_checkbox.setFont(ok_font)
+        if create_hf:
+            self.hf_inference = HfHandler(smp_settings['hf'])
+            self.add_emojis_button.clicked.connect(self.add_emojis_and_tags)
+        else:
+            hf_font = self.add_emojis_button.font()
+            hf_font.setStrikeOut(True)
+            self.add_emojis_button.setFont(hf_font)
+            self.add_emojis_button.setEnabled(False)
+
+        if not all((create_tg, create_vk, create_ok)):
+            self.send_button.setEnabled(False)
+
         self.files = list()
 
     @asyncSlot()

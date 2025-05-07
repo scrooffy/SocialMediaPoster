@@ -13,7 +13,7 @@ class OkSender(Sender):
         self.application_key = application_key
         self.application_secret_key = application_secret_key
         self.group_id = group_id
-        self.result = ''
+        self.result = None
         self.api_url = 'https://api.ok.ru/fb.do'
 
     def _concat_result(self, text: str) -> None:
@@ -127,6 +127,8 @@ class OkSender(Sender):
         """
         await super().send_article(title=title, text=text, photos=photos, videos=videos)
 
+        self.result = ''
+
         if photos is None:
             photos = []
         if videos is None:
@@ -181,7 +183,6 @@ class OkSender(Sender):
 
                     result = result.replace('"', '')
                     self._concat_result(f'https://ok.ru/group/{self.group_id}/topic/{result}')
-                    print(self.result)
 
             except Exception as e:
                 exception_text = f"Error posting article: {str(e)}"

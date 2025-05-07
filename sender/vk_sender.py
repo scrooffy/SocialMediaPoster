@@ -2,34 +2,29 @@ import re
 import json
 from math import ceil
 import aiohttp
-from sender.sender import Sender
+
+from .sender import Sender
 
 
 class VkSender(Sender):
     def __init__(self, token, group_id):
         self.token = token
         self.group_id = group_id
-        self.result = ''
-        self.links = None
+        self.result = None
 
-    async def send_article(self, title='', text='', photos=None, videos=None, delayed_post_date=None, get_links=False,
-                           return_links=False) -> dict | None:
+    async def send_article(self, title='', text='', photos=None, videos=None, delayed_post_date=None) -> None:
         await super().send_article(title=title, text=text, photos=photos, videos=videos)
         if videos is None:
             videos = []
         if photos is None:
             photos = []
         self.result = ''
-        self.links = {
-            'photos': [],
-            'videos': []
-        }
 
         article = f'{title}\n\n{text}' if title else text
         attachments = []
 
         async with aiohttp.ClientSession(trust_env=True) as session:
-            photos, videos, attachments = await self.upload_media(photos, videos, attachments, session, return_links)
+            photos, videos, attachments = await self.upload_media(photos, videos, attachments, session)
 
             url = f'https://api.vk.com/method/wall.post'
             params = {
@@ -44,19 +39,19 @@ class VkSender(Sender):
             if delayed_post_date:
                 params['publish_date'] = int(delayed_post_date)
 
-            await self.post_request(params, session, url, return_link=True)
+            await self.post_request(params, session, url)
 
             # If the number of media files is more than 10, send the remaining files
             if photos or videos:
                 params['message'] = ' '
                 while photos or videos:
                     attachments = []
-                    photos, videos, attachments = await self.upload_media(photos, videos, attachments, session, return_links)
+                    photos, videos, attachments = await self.upload_media(photos, videos, attachments, session)
                     params['attachments'] = ','.join(attachments)
                     await self.post_request(params, session, url)
-            return self.links if return_links else None
+            return
 
-    async def post_request(self, params: dict, session: aiohttp.ClientSession, url: str, return_link=False) -> None:
+    async def post_request(self, params: dict, session: aiohttp.ClientSession, url: str) -> None:
         async with session.post(url, data=params, ssl=False) as response:
             data = await response.read()
             post_id = None
@@ -76,22 +71,20 @@ class VkSender(Sender):
                 error_text = str(e)
 
             if post_id:
-                if return_link:
-                    self.result += f'https://vk.com/wall-{self.group_id}_{post_id}'
+                self.result += f'https://vk.com/wall-{self.group_id}_{post_id}'
             elif error_text:
                 self.result += f'Проблема отправки статьи в VK: {error_text}'
             else:
                 self.result += 'Что то определенно не так c VK ☉ ‿ ⚆'
 
-    async def upload_media(self, pics: list, vids: list, attachmnts: list, session: aiohttp.ClientSession,
-                           return_links=False) -> tuple:
+    async def upload_media(self, pics: list, vids: list, attachmnts: list, session: aiohttp.ClientSession) -> tuple:
         if ceil((len(pics) + len(vids)) / 10) == 1:
             if vids:
                 for vid in vids:
-                    attachmnts += await self.upload_video(vid, session, return_links)
+                    attachmnts += await self._upload_video(vid, session)
                 vids = []
             if pics:
-                attachmnts += await self.upload_photos(pics, session, return_links)
+                attachmnts += await self._upload_photos(pics, session)
                 pics = []
         else:
             # First 10 items are sent first, after sending all the others
@@ -99,26 +92,26 @@ class VkSender(Sender):
             if vids:
                 if len(vids) <= 10:
                     for vid in vids:
-                        attachmnts += await self.upload_video(vid, session, return_links)
+                        attachmnts += await self._upload_video(vid, session)
                     sizeof_media -= len(vids)
                     vids = []
                 else:
                     for vid in vids[:10]:
-                        attachmnts += await self.upload_video(vid, session, return_links)
+                        attachmnts += await self._upload_video(vid, session)
                     sizeof_media = 0
                     vids = vids[10:]
 
             if pics:
                 if len(pics) <= sizeof_media:
-                    attachmnts += await self.upload_photos(pics, session, return_links)
+                    attachmnts += await self._upload_photos(pics, session)
                     pics = []
                 else:
-                    attachmnts += await self.upload_photos(pics[:sizeof_media], session, return_links)
+                    attachmnts += await self._upload_photos(pics[:sizeof_media], session)
                     pics = pics[sizeof_media:]
 
         return pics, vids, attachmnts
 
-    async def upload_photos(self, photos: list, session: aiohttp.ClientSession, return_links=False) -> list:
+    async def _upload_photos(self, photos: list, session: aiohttp.ClientSession) -> list:
         attachments = []
         upload_url = f'https://api.vk.com/method/photos.getWallUploadServer'
         params = {
@@ -162,16 +155,13 @@ class VkSender(Sender):
                 self.result += f'Проблема отправки фото в VK: {data["error"]["error_msg"]}\n'
                 continue
 
-            if return_links:
-                self.links['photos'].append(data['response'][0]['orig_photo']['url'])
-
             photo_id = data['response'][0]['id']
             owner_id = data['response'][0]['owner_id']
             attachments.append(f'photo{owner_id}_{photo_id}')
 
         return attachments
 
-    async def upload_video(self, video: str, session: aiohttp.ClientSession, return_links=False) -> list:
+    async def _upload_video(self, video: str, session: aiohttp.ClientSession) -> list:
         url = 'https://api.vk.com/method/video.save'
         params = {
             'access_token': self.token,
@@ -196,8 +186,5 @@ class VkSender(Sender):
                 video_id = data['video_id']
                 owner_id = data['owner_id']
                 attachments.append(f'video{owner_id}_{video_id}')
-
-                # if return_links:
-                #     self.links['videos'].append(data['direct_link'])
 
         return attachments

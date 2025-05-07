@@ -50,7 +50,7 @@ class TelegramSender(Sender):
         self.bot = Bot(token=token)
         self.chat_id = '-' + chat_id
         self.group_name = group_name
-        self.result = ''
+        self.result = None
         self.links = None
 
 
