@@ -27,7 +27,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.poster = None
         self.files = None
         self.hf_inference = None
-        self.configure(settings_path='settings/settings.json')
+        self.configure(settings_path='settings/settings_test.json')
 
     def configure(self, settings_path):
         self.setupUi(self)
@@ -214,11 +214,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def get_results(self) -> list:
         results = []
-        if hasattr(self.poster, 'tg') and self.poster.tg.result != '':
+        if hasattr(self.poster, 'tg') and self.poster.tg.result:
             results.append(self.poster.tg.result)
-        if hasattr(self.poster, 'vk') and self.poster.vk.result != '':
+        if hasattr(self.poster, 'vk') and self.poster.vk.result:
             results.append(self.poster.vk.result)
-        if hasattr(self.poster, 'ok') and self.poster.ok.result != '':
+        if hasattr(self.poster, 'ok') and self.poster.ok.result:
             results.append(self.poster.ok.result)
 
         return results
