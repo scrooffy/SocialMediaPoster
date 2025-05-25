@@ -27,7 +27,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.poster = None
         self.files = None
         self.hf_inference = None
-        self.configure(settings_path='settings/settings_test.json')
+        self.configure(settings_path='settings/settings.json')
 
     def configure(self, settings_path):
         self.setupUi(self)
