@@ -26,7 +26,7 @@ class VkSender(Sender):
         async with aiohttp.ClientSession(trust_env=True) as session:
             photos, videos, attachments = await self.upload_media(photos, videos, attachments, session)
 
-            url = f'https://api.vk.com/method/wall.post'
+            url = f'https://api.vk.ru/method/wall.post'
             params = {
                 'owner_id': '-' + self.group_id,
                 'from_group': 1,
@@ -71,7 +71,7 @@ class VkSender(Sender):
                 error_text = str(e)
 
             if post_id:
-                self.result += f'https://vk.com/wall-{self.group_id}_{post_id}'
+                self.result += f'https://vk.ru/wall-{self.group_id}_{post_id}'
             elif error_text:
                 self.result += f'Проблема отправки статьи в VK: {error_text}'
             else:
@@ -113,7 +113,7 @@ class VkSender(Sender):
 
     async def _upload_photos(self, photos: list, session: aiohttp.ClientSession) -> list:
         attachments = []
-        upload_url = f'https://api.vk.com/method/photos.getWallUploadServer'
+        upload_url = f'https://api.vk.ru/method/photos.getWallUploadServer'
         params = {
             'group_id': self.group_id,
             'access_token': self.token,
@@ -137,7 +137,7 @@ class VkSender(Sender):
                 self.result += f'Проблема отправки фото в VK: {data["error"]["error_msg"]}\n'
                 continue
 
-            save_url = f'https://api.vk.com/method/photos.saveWallPhoto'
+            save_url = f'https://api.vk.ru/method/photos.saveWallPhoto'
             params = {
                 'group_id': self.group_id,
                 'photo': data['photo'],
@@ -162,7 +162,7 @@ class VkSender(Sender):
         return attachments
 
     async def _upload_video(self, video: str, session: aiohttp.ClientSession) -> list:
-        url = 'https://api.vk.com/method/video.save'
+        url = 'https://api.vk.ru/method/video.save'
         params = {
             'access_token': self.token,
             'group_id': self.group_id,
