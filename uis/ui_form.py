@@ -50,57 +50,25 @@ class Ui_MainWindow(object):
         self.gridLayout = QGridLayout()
         self.gridLayout.setObjectName(u"gridLayout")
         self.gridLayout.setSizeConstraint(QLayout.SizeConstraint.SetDefaultConstraint)
-        self.delayed_post_check = QCheckBox(self.centralwidget)
-        self.delayed_post_check.setObjectName(u"delayed_post_check")
+        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
-        self.gridLayout.addWidget(self.delayed_post_check, 6, 1, 1, 1)
+        self.gridLayout.addItem(self.verticalSpacer, 6, 1, 1, 1)
 
-        self.article_text = QPlainTextEdit(self.centralwidget)
-        self.article_text.setObjectName(u"article_text")
-        self.article_text.setAcceptDrops(False)
+        self.send_to_label = QLabel(self.centralwidget)
+        self.send_to_label.setObjectName(u"send_to_label")
 
-        self.gridLayout.addWidget(self.article_text, 1, 2, 11, 3)
+        self.gridLayout.addWidget(self.send_to_label, 9, 1, 1, 1)
 
-        self.delayed_time = QDateTimeEdit(self.centralwidget)
-        self.delayed_time.setObjectName(u"delayed_time")
+        self.format_text_button = QPushButton(self.centralwidget)
+        self.format_text_button.setObjectName(u"format_text_button")
 
-        self.gridLayout.addWidget(self.delayed_time, 7, 1, 1, 1)
+        self.gridLayout.addWidget(self.format_text_button, 2, 1, 1, 1)
 
-        self.file_listWidget = QListWidget(self.centralwidget)
-        self.file_listWidget.setObjectName(u"file_listWidget")
-        self.file_listWidget.setMaximumSize(QSize(16777215, 80))
+        self.article_text_label = QLabel(self.centralwidget)
+        self.article_text_label.setObjectName(u"article_text_label")
+        self.article_text_label.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
 
-        self.gridLayout.addWidget(self.file_listWidget, 16, 2, 1, 1)
-
-        self.verticalLayout = QVBoxLayout()
-        self.verticalLayout.setObjectName(u"verticalLayout")
-        self.file_order_up = QPushButton(self.centralwidget)
-        self.file_order_up.setObjectName(u"file_order_up")
-        self.file_order_up.setMaximumSize(QSize(20, 40))
-        font = QFont()
-        font.setPointSize(16)
-        self.file_order_up.setFont(font)
-
-        self.verticalLayout.addWidget(self.file_order_up)
-
-        self.file_order_down = QPushButton(self.centralwidget)
-        self.file_order_down.setObjectName(u"file_order_down")
-        self.file_order_down.setMaximumSize(QSize(20, 40))
-        self.file_order_down.setFont(font)
-
-        self.verticalLayout.addWidget(self.file_order_down)
-
-
-        self.gridLayout.addLayout(self.verticalLayout, 16, 4, 1, 1)
-
-        self.article_title = QLineEdit(self.centralwidget)
-        self.article_title.setObjectName(u"article_title")
-        font1 = QFont()
-        font1.setBold(True)
-        self.article_title.setFont(font1)
-        self.article_title.setAcceptDrops(False)
-
-        self.gridLayout.addWidget(self.article_title, 0, 2, 1, 3)
+        self.gridLayout.addWidget(self.article_text_label, 1, 1, 1, 1)
 
         self.gridLayout_4 = QGridLayout()
         self.gridLayout_4.setObjectName(u"gridLayout_4")
@@ -123,37 +91,33 @@ class Ui_MainWindow(object):
         self.gridLayout_4.addItem(self.verticalSpacer_2, 3, 2, 1, 1)
 
 
-        self.gridLayout.addLayout(self.gridLayout_4, 16, 1, 3, 1)
-
-        self.format_text_button = QPushButton(self.centralwidget)
-        self.format_text_button.setObjectName(u"format_text_button")
-
-        self.gridLayout.addWidget(self.format_text_button, 2, 1, 1, 1)
-
-        self.add_emojis_button = QPushButton(self.centralwidget)
-        self.add_emojis_button.setObjectName(u"add_emojis_button")
-
-        self.gridLayout.addWidget(self.add_emojis_button, 3, 1, 1, 1)
+        self.gridLayout.addLayout(self.gridLayout_4, 17, 1, 3, 1)
 
         self.article_title_label = QLabel(self.centralwidget)
         self.article_title_label.setObjectName(u"article_title_label")
 
         self.gridLayout.addWidget(self.article_title_label, 0, 1, 1, 1)
 
-        self.article_text_label = QLabel(self.centralwidget)
-        self.article_text_label.setObjectName(u"article_text_label")
-        self.article_text_label.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.file_listWidget = QListWidget(self.centralwidget)
+        self.file_listWidget.setObjectName(u"file_listWidget")
+        self.file_listWidget.setMaximumSize(QSize(16777215, 80))
 
-        self.gridLayout.addWidget(self.article_text_label, 1, 1, 1, 1)
+        self.gridLayout.addWidget(self.file_listWidget, 17, 2, 1, 1)
 
-        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        self.delayed_time = QDateTimeEdit(self.centralwidget)
+        self.delayed_time.setObjectName(u"delayed_time")
 
-        self.gridLayout.addItem(self.verticalSpacer, 5, 1, 1, 1)
+        self.gridLayout.addWidget(self.delayed_time, 8, 1, 1, 1)
 
-        self.send_to_label = QLabel(self.centralwidget)
-        self.send_to_label.setObjectName(u"send_to_label")
+        self.legacy_hf_method_checkbox = QCheckBox(self.centralwidget)
+        self.legacy_hf_method_checkbox.setObjectName(u"legacy_hf_method_checkbox")
 
-        self.gridLayout.addWidget(self.send_to_label, 8, 1, 1, 1)
+        self.gridLayout.addWidget(self.legacy_hf_method_checkbox, 4, 1, 1, 1)
+
+        self.delayed_post_check = QCheckBox(self.centralwidget)
+        self.delayed_post_check.setObjectName(u"delayed_post_check")
+
+        self.gridLayout.addWidget(self.delayed_post_check, 7, 1, 1, 1)
 
         self.send_to_layout = QVBoxLayout()
         self.send_to_layout.setObjectName(u"send_to_layout")
@@ -176,12 +140,53 @@ class Ui_MainWindow(object):
         self.send_to_layout.addWidget(self.ok_checkbox)
 
 
-        self.gridLayout.addLayout(self.send_to_layout, 9, 1, 1, 1)
+        self.gridLayout.addLayout(self.send_to_layout, 10, 1, 1, 1)
 
-        self.legacy_hf_method_checkbox = QCheckBox(self.centralwidget)
-        self.legacy_hf_method_checkbox.setObjectName(u"legacy_hf_method_checkbox")
+        self.verticalLayout = QVBoxLayout()
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.file_order_up = QPushButton(self.centralwidget)
+        self.file_order_up.setObjectName(u"file_order_up")
+        self.file_order_up.setMaximumSize(QSize(20, 40))
+        font = QFont()
+        font.setPointSize(16)
+        self.file_order_up.setFont(font)
 
-        self.gridLayout.addWidget(self.legacy_hf_method_checkbox, 4, 1, 1, 1)
+        self.verticalLayout.addWidget(self.file_order_up)
+
+        self.file_order_down = QPushButton(self.centralwidget)
+        self.file_order_down.setObjectName(u"file_order_down")
+        self.file_order_down.setMaximumSize(QSize(20, 40))
+        self.file_order_down.setFont(font)
+
+        self.verticalLayout.addWidget(self.file_order_down)
+
+
+        self.gridLayout.addLayout(self.verticalLayout, 17, 4, 1, 1)
+
+        self.add_emojis_button = QPushButton(self.centralwidget)
+        self.add_emojis_button.setObjectName(u"add_emojis_button")
+
+        self.gridLayout.addWidget(self.add_emojis_button, 3, 1, 1, 1)
+
+        self.article_text = QPlainTextEdit(self.centralwidget)
+        self.article_text.setObjectName(u"article_text")
+        self.article_text.setAcceptDrops(False)
+
+        self.gridLayout.addWidget(self.article_text, 1, 2, 12, 3)
+
+        self.article_title = QLineEdit(self.centralwidget)
+        self.article_title.setObjectName(u"article_title")
+        font1 = QFont()
+        font1.setBold(True)
+        self.article_title.setFont(font1)
+        self.article_title.setAcceptDrops(False)
+
+        self.gridLayout.addWidget(self.article_title, 0, 2, 1, 3)
+
+        self.make_repost_button = QPushButton(self.centralwidget)
+        self.make_repost_button.setObjectName(u"make_repost_button")
+
+        self.gridLayout.addWidget(self.make_repost_button, 5, 1, 1, 1)
 
 
         self.gridLayout_2.addLayout(self.gridLayout, 0, 0, 1, 1)
@@ -223,7 +228,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 540, 33))
+        self.menubar.setGeometry(QRect(0, 0, 540, 21))
         self.menu = QMenu(self.menubar)
         self.menu.setObjectName(u"menu")
         MainWindow.setMenuBar(self.menubar)
@@ -246,23 +251,24 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Social Media Poster", None))
         self.about.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0431 \u0430\u0432\u0442\u043e\u0440\u0435", None))
-        self.delayed_post_check.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0442\u043b\u043e\u0436\u0435\u043d\u043d\u044b\u0439 \u043f\u043e\u0441\u0442", None))
-        self.file_order_up.setText(QCoreApplication.translate("MainWindow", u"\u2191", None))
-        self.file_order_down.setText(QCoreApplication.translate("MainWindow", u"\u2193", None))
+        self.send_to_label.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0432:", None))
+        self.format_text_button.setText(QCoreApplication.translate("MainWindow", u"\u0424\u043e\u0440\u043c\u0430\u0442\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0442\u0435\u043a\u0441\u0442", None))
+        self.article_text_label.setText(QCoreApplication.translate("MainWindow", u"\u0422\u0435\u043a\u0441\u0442 \u0441\u0442\u0430\u0442\u044c\u0438:", None))
         self.delete_file_button.setText(QCoreApplication.translate("MainWindow", u"\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0444\u0430\u0439\u043b", None))
         self.images_file_dialog.setText(QCoreApplication.translate("MainWindow", u"\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0444\u0430\u0439\u043b(\u044b)", None))
-        self.format_text_button.setText(QCoreApplication.translate("MainWindow", u"\u0424\u043e\u0440\u043c\u0430\u0442\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0442\u0435\u043a\u0441\u0442", None))
-        self.add_emojis_button.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0431\u0440\u0430\u0431\u043e\u0442\u0430\u0442\u044c \u0418\u0418", None))
         self.article_title_label.setText(QCoreApplication.translate("MainWindow", u"\u0417\u0430\u0433\u043e\u043b\u043e\u0432\u043e\u043a \u0441\u0442\u0430\u0442\u044c\u0438:", None))
-        self.article_text_label.setText(QCoreApplication.translate("MainWindow", u"\u0422\u0435\u043a\u0441\u0442 \u0441\u0442\u0430\u0442\u044c\u0438:", None))
-        self.send_to_label.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c \u0432:", None))
-        self.telegram_checkbox.setText(QCoreApplication.translate("MainWindow", u"Telegram", None))
-        self.vk_checkbox.setText(QCoreApplication.translate("MainWindow", u"VK", None))
-        self.ok_checkbox.setText(QCoreApplication.translate("MainWindow", u"OK.ru", None))
 #if QT_CONFIG(tooltip)
         self.legacy_hf_method_checkbox.setToolTip(QCoreApplication.translate("MainWindow", u"\u041e\u0442\u043f\u0440\u0430\u0432\u043a\u0430 \u0437\u0430\u043f\u0440\u043e\u0441\u0430 \u0432 Huggingface \u0441\u0438\u043d\u0445\u0440\u043e\u043d\u043d\u044b\u043c \u043c\u0435\u0442\u043e\u0434\u043e\u043c (\u0435\u0441\u043b\u0438 \u043d\u0435 \u0440\u0430\u0431\u043e\u0442\u0430\u0435\u0442 \u0441\u0442\u0430\u043d\u0434\u0430\u0440\u0442\u043d\u044b\u0439 \u043c\u0435\u0442\u043e\u0434)", None))
 #endif // QT_CONFIG(tooltip)
         self.legacy_hf_method_checkbox.setText(QCoreApplication.translate("MainWindow", u"Legacy \u043c\u0435\u0442\u043e\u0434", None))
+        self.delayed_post_check.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0442\u043b\u043e\u0436\u0435\u043d\u043d\u044b\u0439 \u043f\u043e\u0441\u0442", None))
+        self.telegram_checkbox.setText(QCoreApplication.translate("MainWindow", u"Telegram", None))
+        self.vk_checkbox.setText(QCoreApplication.translate("MainWindow", u"VK", None))
+        self.ok_checkbox.setText(QCoreApplication.translate("MainWindow", u"OK.ru", None))
+        self.file_order_up.setText(QCoreApplication.translate("MainWindow", u"\u2191", None))
+        self.file_order_down.setText(QCoreApplication.translate("MainWindow", u"\u2193", None))
+        self.add_emojis_button.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0431\u0440\u0430\u0431\u043e\u0442\u0430\u0442\u044c \u0418\u0418", None))
+        self.make_repost_button.setText(QCoreApplication.translate("MainWindow", u"\u0421\u0434\u0435\u043b\u0430\u0442\u044c \u0440\u0435\u043f\u043e\u0441\u0442\u044b", None))
         self.clear_all_button.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0447\u0438\u0441\u0442\u0438\u0442\u044c \u0432\u0441\u0451", None))
         self.remember_links_button.setText(QCoreApplication.translate("MainWindow", u"\u041f\u043e\u043a\u0430\u0437\u0430\u0442\u044c \u0441\u0441\u044b\u043b\u043a\u0438", None))
         self.send_button.setText(QCoreApplication.translate("MainWindow", u"\u041e\u0442\u043f\u0440\u0430\u0432\u0438\u0442\u044c", None))
