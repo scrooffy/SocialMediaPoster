@@ -1,17 +1,18 @@
 import os
 import json
+
 import aiohttp
 import asyncio
-from sender.vk_sender import VkSender
-from sender.telegram_sender import TelegramSender
-from sender.ok_sender import OkSender
+
+from .vk_sender import VkSender
+from .telegram_sender import TelegramSender
+from .ok_sender import OkSender
 
 
 class SocialMediaPoster:
     def __init__(self, telegram=True, vk=True, ok= True, settings=None):
         self.title = None
         self.text = None
-        self.files = []
         self.photos = []
         self.videos = []
         self.delayed_post_date = None
@@ -36,57 +37,77 @@ class SocialMediaPoster:
                 group_id=self.settings['ok']['group_id']
             )
 
-    async def send_article(self, telegram=True, vk=True, ok=True) -> None:
+    async def send_article(
+            self, telegram=False, vk=False, ok=False,
+            title=None, text=None, files=None, date=None
+    ) -> None:
         send_to = []
         gathering_list = []
 
-        if hasattr(self, 'vk'):
-            send_to.append((vk, self.vk.send_article))
-        if hasattr(self, 'tg'):
-            send_to.append((telegram, self.tg.send_article))
-        if hasattr(self, 'ok'):
-            send_to.append((ok, self.ok.send_article))
+        if vk:
+            send_to.append(self.vk.send_article)
+        if telegram:
+            send_to.append(self.tg.send_article)
+        if ok:
+            send_to.append(self.ok.send_article)
 
-        if self.files:
-            self.separate_files()
+        photos, videos = self.separate_files(files) if files else (None, None)
 
-        for send, social_media in send_to:
-            if send:
-                gathering_list.append(
-                    social_media(text=self.text, title=self.title, photos=self.photos, videos=self.videos,
-                                 delayed_post_date=self.delayed_post_date))
+        for social_media in send_to:
+            gathering_list.append(
+                social_media(text=text, title=title, photos=photos, videos=videos, delayed_post_date=date)
+            )
 
         async with aiohttp.ClientSession() as session:
             await asyncio.gather(*gathering_list)
 
         await session.close()
 
-    def separate_files(self) -> None:
+    async def do_repost(self, vk_link=None, ok_link=None) -> None:
+        repost_to = []
+        gathering_list = []
+
+        if vk_link:
+            repost_to.append((self.vk.repost, vk_link))
+        if ok_link:
+            repost_to.append((self.ok.repost, ok_link))
+
+        for social_media, link in repost_to:
+            gathering_list.append(social_media(link=link))
+
+        async with aiohttp.ClientSession() as session:
+            await asyncio.gather(*gathering_list)
+
+        await session.close()
+
+    def separate_files(self, files: list = None) -> tuple:
         pic_extensions = ('jpg', 'jpeg', 'png', 'webp')
         vid_extensions = ('mp4', '3gp', 'avi', 'mov')
+        photos, videos = [], []
 
-        for file in self.files:
+        for file in files:
             filename, file_extension = os.path.splitext(file)
 
             if file_extension.lower().endswith(pic_extensions):
-                self.photos.append(file)
+                photos.append(file)
             elif file_extension.lower().endswith(vid_extensions):
-                self.videos.append(file)
+                videos.append(file)
 
-    def clear_files(self) -> None:
-        self.files.clear()
-        self.photos.clear()
-        self.videos.clear()
+        return photos, videos
 
 
 async def main():
-    with open('../settings/settings_test.json') as f:
+    with open('../settings/settings.json') as f:
         smp_settings = json.load(f)
     a = SocialMediaPoster(settings=smp_settings)
     a.title = 'test title'
     a.text = 'test text'
+    # a.videos.append('path')
+    # a.photos.append('path')
 
-    await a.send_article(telegram=False, vk=False, ok=True)
+    # await a.send_article(telegram=False, vk=True, ok=False)
+    # await a.do_repost(vk_link='https://vk.com/wall-asdas')
+    # await a.do_repost(ok_link='https://ok.ru/group/123/topic/456')
 
 
 if __name__ == '__main__':
