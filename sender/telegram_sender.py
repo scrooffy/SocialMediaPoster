@@ -6,7 +6,7 @@ from aiogram import Bot
 from aiogram.types import FSInputFile
 from aiogram.utils.media_group import MediaGroupBuilder
 
-from sender.sender import Sender
+from .sender import Sender
 
 
 def _split_into_chunks(text: str, chunk_size:int=4096) -> list:
@@ -92,6 +92,12 @@ class TelegramSender(Sender):
         caption = article if is_caption_text is True else None
 
         media_groups = [MediaGroupBuilder(caption=caption)]
+
+        if not photos:
+            photos = []
+        if not videos:
+            videos = []
+
         # If media files more than 10, split them to several groups
         if len(photos) + len(videos) > 10:
             files_count = len(photos) + len(videos) - 10
