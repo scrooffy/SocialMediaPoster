@@ -4,7 +4,7 @@ from pathlib import Path
 
 import aiohttp
 
-from sender.sender import Sender
+from .sender import Sender
 
 
 class OkSender(Sender):
@@ -16,11 +16,116 @@ class OkSender(Sender):
         self.result = None
         self.api_url = 'https://api.ok.ru/fb.do'
 
-    def _concat_result(self, text: str) -> None:
-        """If result is not empty, appends new line symbol to the value, otherwise just appends the value to result"""
-        if self.result:
-            self.result += '\n'
-        self.result += text
+    async def send_article(
+            self,
+            title: str = '',
+            text: str = '',
+            photos: Optional[List[str]] = None,
+            videos: Optional[List[str]] = None,
+            delayed_post_date: Optional[int] = None
+    ) -> None:
+        """
+        Publishes article in OK.ru
+        :param title: Article title
+        :param text: Article text
+        :param photos: List of paths to photos
+        :param videos: List of video paths
+        :param delayed_post_date: Unix timestamp for delayed publication
+        """
+        await super().send_article(title=title, text=text, photos=photos, videos=videos)
+
+        self.result = ''
+
+        if photos is None:
+            photos = []
+        if videos is None:
+            videos = []
+
+        article = f'{title}\n\n{text}' if title else text
+
+        attachments = {
+            'media': [
+                {
+                    'type': 'text',
+                    'text': article
+                }
+            ]
+        }
+
+        if delayed_post_date:
+            attachments['publishAtMs'] = delayed_post_date * 1000
+
+        async with aiohttp.ClientSession() as session:
+            video_ids = []
+            for video_path in videos:
+                video_name = title if title else Path(video_path).name
+                video_id = await self._upload_video(session, video_path, video_name)
+                if video_id:
+                    video_ids.append(video_id)
+            if video_ids:
+                attachments['media'].append({'type': 'movie', 'list': [{'id': i} for i in video_ids]})
+
+            photo_tokens = await self._upload_photo(session, photos) if photos else []
+            if photo_tokens:
+                attachments['media'].append({'type': 'photo', 'list': [{'id': i} for i in photo_tokens]})
+
+            await self._post_request(session, attachments)
+
+    async def repost(self, link: str) -> None:
+        """
+        Reposts to the group in OK.ru
+        :param link: Link to the publication for reposting in your group
+        """
+        if not link.startswith('https://ok.ru/'):
+            raise ValueError('Invalid OK.ru link')
+
+        self.result = ''
+
+        attachments = {
+            'media': [
+                {
+                    'type': 'link',
+                    'url': link
+                }
+            ]
+        }
+
+        async with aiohttp.ClientSession() as session:
+            await self._post_request(session, attachments)
+
+
+    async def _post_request(self, session: aiohttp.ClientSession, attachments=None):
+        """
+        Makes a request to the server with the given parameters and,
+        if successful, writes a link to the new post to a variable self.result
+        :param session: aiohttp.ClientSession object
+        :param attachments: dict of data
+        """
+        params = {
+            'application_key': self.application_key,
+            'access_token': self.access_token,
+            'method': 'mediatopic.post',
+            'gid': self.group_id,
+            'type': 'GROUP_THEME',
+            'attachment': json.dumps(attachments) if attachments else None,
+            'format': 'json'
+        }
+
+        params = {k: v for k, v in params.items() if v is not None}
+
+        try:
+            async with session.post(self.api_url, data=params) as response:
+                result = await response.text('utf-8')
+                if 'error' in result:
+                    error_msg = json.loads(result)['error_msg']
+                    raise Exception(error_msg)
+
+                result = result.replace('"', '')
+                self._concat_result(f'https://ok.ru/group/{self.group_id}/topic/{result}')
+        except Exception as e:
+            exception_text = f"Проблема отправки статьи в OK.ru: {str(e)}"
+            print(exception_text)
+            self._concat_result(exception_text)
 
     async def _upload_photo(self, session: aiohttp.ClientSession, photo_paths: List[str]) -> Optional[List[str]]:
         """Async upload photos through API OK.ru"""
@@ -63,7 +168,7 @@ class OkSender(Sender):
             return tokens
 
         except Exception as e:
-            exception_text = f"Photo upload error: {str(e)}"
+            exception_text = f'Проблема отправки фото в OK.ru: {str(e)}'
             print(exception_text)
             self._concat_result(exception_text)
 
@@ -102,89 +207,14 @@ class OkSender(Sender):
             return video_id
 
         except Exception as e:
-            exception_text = f"Error uploading video: {str(e)}"
+            exception_text = f"Проблема отправки видео в OK.ru: {str(e)}"
             print(exception_text)
             self._concat_result(exception_text)
 
             return None
 
-    async def send_article(
-            self,
-            title: str = '',
-            text: str = '',
-            photos: Optional[List[str]] = None,
-            videos: Optional[List[str]] = None,
-            delayed_post_date: Optional[int] = None
-    ) -> None:
-        """
-        Publishes article in OK.ru
-        :param title: Article title
-        :param text: Article text
-        :param photos: List of paths to photos
-        :param videos: List of video paths
-        :param delayed_post_date: Unix timestamp for delayed publication
-        :return: Publish result or error log
-        """
-        await super().send_article(title=title, text=text, photos=photos, videos=videos)
-
-        self.result = ''
-
-        if photos is None:
-            photos = []
-        if videos is None:
-            videos = []
-
-        article = f'{title}\n\n{text}' if title else text
-
-        attachments = {
-            'media': [
-                {
-                    'type': 'text',
-                    'text': article
-                }
-            ]
-        }
-
-        if delayed_post_date:
-            attachments['publishAtMs'] = delayed_post_date * 1000
-
-        async with aiohttp.ClientSession() as session:
-            video_ids = []
-            for video_path in videos:
-                video_name = title if title else Path(video_path).name
-                video_id = await self._upload_video(session, video_path, video_name)
-                if video_id:
-                    video_ids.append(video_id)
-            if video_ids:
-                attachments['media'].append({'type': 'movie', 'list': [{'id': i} for i in video_ids]})
-
-            photo_tokens = await self._upload_photo(session, photos) if photos else []
-            if photo_tokens:
-                attachments['media'].append({'type': 'photo', 'list': [{'id': i} for i in photo_tokens]})
-
-            params = {
-                'application_key': self.application_key,
-                'access_token': self.access_token,
-                'method': 'mediatopic.post',
-                'gid': self.group_id,
-                'type': 'GROUP_THEME',
-                'attachment': json.dumps(attachments) if attachments else None,
-                'format': 'json'
-            }
-
-            params = {k: v for k, v in params.items() if v is not None}
-
-            try:
-                async with session.post(self.api_url, data=params) as response:
-                    result = await response.text('utf-8')
-                    if 'error' in result:
-                        error_msg = json.loads(result)['error_msg']
-                        raise Exception(error_msg)
-
-                    result = result.replace('"', '')
-                    self._concat_result(f'https://ok.ru/group/{self.group_id}/topic/{result}')
-
-            except Exception as e:
-                exception_text = f"Error posting article: {str(e)}"
-                print(exception_text)
-                self._concat_result(exception_text)
+    def _concat_result(self, text: str) -> None:
+        """If result is not empty, appends new line symbol to the value, otherwise just appends the value to result"""
+        if self.result:
+            self.result += '\n'
+        self.result += text
