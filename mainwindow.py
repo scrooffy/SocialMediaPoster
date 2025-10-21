@@ -19,6 +19,7 @@ from uis.ui_form import Ui_MainWindow
 
 from sender.social_media_poster import SocialMediaPoster
 from hf_handler import HfHandler
+from repost_window import RepostWindow
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -27,6 +28,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.poster = None
         self.files = None
         self.hf_inference = None
+        self.repost_dialog = None
         self.configure(settings_path='settings/settings.json')
 
     def configure(self, settings_path):
@@ -40,26 +42,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         cp = QtGui.QGuiApplication.primaryScreen().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
-
-        self.images_file_dialog.clicked.connect(self.open_file_dialog)
-        self.send_button.clicked.connect(self.send_to_social_media)
-        self.clear_all_button.clicked.connect(self.clear_all)
-        self.remember_links_button.clicked.connect(self.view_results)
-        self.about.triggered.connect(self.about_window)
-        self.format_text_button.clicked.connect(self.format_text)
-
-        self.delete_file_button.clicked.connect(self.remove_file)
-        self.delete_file_button.setEnabled(False)
-
-        self.file_listWidget.itemSelectionChanged.connect(self.update_file_buttons_state)
-        self.file_order_up.setEnabled(False)
-        self.file_order_up.clicked.connect(self.move_file_up)
-        self.file_order_down.setEnabled(False)
-        self.file_order_down.clicked.connect(self.move_file_down)
-
-        self.delayed_time.setDateTime(QDateTime.currentDateTime())
-        self.delayed_time.setEnabled(False)
-        self.delayed_post_check.stateChanged.connect(self.delayed_date_state_changed)
 
         create_tg, create_vk, create_ok, create_hf = (False, False, False, False)
         with open(settings_path, encoding='utf_8_sig') as f:
@@ -122,19 +104,45 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.add_emojis_button.setFont(hf_font)
             self.add_emojis_button.setEnabled(False)
 
-        if not all((create_tg, create_vk, create_ok)):
-            self.send_button.setEnabled(False)
+        if not create_vk and not create_ok:
+            self.make_repost_button.setEnabled(False)
+            if not create_tg:
+                self.send_button.setEnabled(False)
+
+        self.images_file_dialog.clicked.connect(self.open_file_dialog)
+        self.send_button.clicked.connect(self.send_to_social_media)
+        self.clear_all_button.clicked.connect(self.clear_all)
+        self.remember_links_button.clicked.connect(self.view_results)
+        self.about.triggered.connect(self.about_window)
+        self.format_text_button.clicked.connect(self.format_text)
+
+        if self.make_repost_button.isEnabled():
+            self.repost_dialog = RepostWindow(parent=self)
+            self.make_repost_button.clicked.connect(self.show_repost_dialog)
+
+        self.delete_file_button.clicked.connect(self.remove_file)
+        self.delete_file_button.setEnabled(False)
+
+        self.file_listWidget.itemSelectionChanged.connect(self.update_file_buttons_state)
+        self.file_order_up.setEnabled(False)
+        self.file_order_up.clicked.connect(self.move_file_up)
+        self.file_order_down.setEnabled(False)
+        self.file_order_down.clicked.connect(self.move_file_down)
+
+        self.delayed_time.setDateTime(QDateTime.currentDateTime())
+        self.delayed_time.setEnabled(False)
+        self.delayed_post_check.stateChanged.connect(self.delayed_date_state_changed)
 
         self.files = list()
 
     @asyncSlot()
     async def send_to_social_media(self) -> None:
-        self.poster.title = self.article_title.text().strip()
-        self.poster.text = self.article_text.toPlainText().strip()
-        self.poster.files = self.files.copy()
-        self.poster.delayed_post_date = self.get_timestamp() if self.delayed_post_check.isChecked() else None
+        title = self.article_title.text().strip()
+        text = self.article_text.toPlainText().strip()
+        files = self.files.copy()
+        delayed_post_date = self.get_timestamp() if self.delayed_post_check.isChecked() else None
 
-        if self.poster.title == '' and self.poster.text == '' and self.poster.files == []:
+        if title == '' and text == '' and files == []:
             await self.error_window('Минимум одно поле должно быть заполнено!')
             return
 
@@ -149,21 +157,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         to_vk = self.vk_checkbox.isChecked()
         to_ok = self.ok_checkbox.isChecked()
 
-        await self.poster.send_article(telegram=to_telegram, vk=to_vk, ok=to_ok)
+        await self.poster.send_article(telegram=to_telegram, vk=to_vk, ok=to_ok,
+                                       title=title, text=text, files=files, date=delayed_post_date)
         await self.view_results(header='Результат отправки')
-
-        # Preventive clean-up in poster object because of dupping media
-        self.poster.clear_files()
 
         self.send_button.setEnabled(True)
         self.send_button.setText('Отправить')
 
     @asyncSlot()
-    async def view_results(self, header=None) -> None:
+    async def view_results(self, header=None, parent=None) -> None:
         header = 'Спокуха, всё под контролем' if header is None else header
         results = self.get_results()
 
-        result_dlg = QMessageBox(self)
+        result_dlg = QMessageBox(parent) if parent else QMessageBox(self)
         if any(results):
             result_dlg.setWindowTitle(header)
             result_dlg.setText('\n'.join(results))
@@ -211,6 +217,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.add_emojis_button.setEnabled(True)
         self.add_emojis_button.setText('Обработать ИИ')
+
+    @asyncSlot()
+    async def show_repost_dialog(self):
+        self.repost_dialog.show()
 
     def get_results(self) -> list:
         results = []
@@ -313,8 +323,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         about_dlg.exec()
 
     @asyncSlot()
-    async def error_window(self, text='Неизвестная ошибка'):
-        about_dlg = QMessageBox(self)
+    async def error_window(self, text='Неизвестная ошибка', parent=None):
+        about_dlg = QMessageBox(parent) if parent else QMessageBox(self)
         about_dlg.setWindowTitle('Ошибка')
         about_dlg.setText(text)
         about_dlg.addButton('Прости, программочка!!', QMessageBox.RejectRole)
@@ -335,7 +345,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.article_title.setText('')
         self.file_listWidget.clear()
         self.files.clear()
-        self.poster.clear_files()
 
 def main():
     app = QApplication(sys.argv)
