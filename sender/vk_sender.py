@@ -1,10 +1,12 @@
-import re
+import asyncio
 import json
 import mimetypes
-import asyncio
+import os.path
+import re
 from math import ceil
-import aiohttp
+
 import aiofiles
+import aiohttp
 
 from .sender import Sender
 
@@ -230,7 +232,7 @@ class VkSender(Sender):
                 form.add_field(
                     'photo',
                     await f.read(),
-                    filename=photo,
+                    filename=os.path.basename(photo),
                     content_type=mime_type
                 )
 
