@@ -1,7 +1,9 @@
 import json
+import mimetypes
+import os.path
 from typing import Optional, List
-from pathlib import Path
 
+import aiofiles
 import aiohttp
 
 from .sender import Sender
@@ -58,7 +60,7 @@ class OkSender(Sender):
         async with aiohttp.ClientSession() as session:
             video_ids = []
             for video_path in videos:
-                video_name = title if title else Path(video_path).name
+                video_name = title if title else None
                 video_id = await self._upload_video(session, video_path, video_name)
                 if video_id:
                     video_ids.append(video_id)
@@ -92,7 +94,6 @@ class OkSender(Sender):
 
         async with aiohttp.ClientSession() as session:
             await self._post_request(session, attachments)
-
 
     async def _post_request(self, session: aiohttp.ClientSession, attachments=None):
         """
@@ -128,11 +129,14 @@ class OkSender(Sender):
             self._concat_result(exception_text)
 
     async def _upload_photo(self, session: aiohttp.ClientSession, photo_paths: List[str]) -> Optional[List[str]]:
-        """Async upload photos through API OK.ru"""
+        """
+        Async upload photos through API OK.ru
+        :param session: aiohttp.ClientSession object
+        :param photo_paths: List of photo paths
+        :return: List of tokens of successfully uploaded photos
+        """
         if not photo_paths:
             return None
-
-        opened_photos = []
 
         try:
             params = {
@@ -153,9 +157,17 @@ class OkSender(Sender):
 
             data = aiohttp.FormData()
             for idx, path in enumerate(photo_paths, start=1):
-                file = open(path, 'rb')
-                data.add_field(f"pic{idx}", file)
-                opened_photos.append(file)
+                async with aiofiles.open(path, 'rb') as f:
+                    mimetype, _ = mimetypes.guess_type(path)
+                    if mimetype is None:
+                        mimetype = 'application/octet-stream'
+
+                    data.add_field(
+                        f"pic{idx}",
+                        await f.read(),
+                        filename=os.path.basename(path),
+                        content_type=mimetype
+                    )
 
             async with session.post(upload_url, data=data) as up:
                 photo_res = await up.text('utf-8')
@@ -173,24 +185,28 @@ class OkSender(Sender):
             self._concat_result(exception_text)
 
             return None
-        finally:
-            for f in opened_photos:
-                if hasattr(f, 'close'):
-                    f.close()
 
     async def _upload_video(self, session: aiohttp.ClientSession, video_path: str, video_name: str) -> Optional[str]:
-        """Upload 1 video to OK.ru and return video ID"""
-        try:
-            params = {
-                'application_key': self.application_key,
-                'access_token': self.access_token,
-                'method': 'video.getUploadUrl',
-                'gid': self.group_id,
-                'file_name': video_name,
-                'file_size': 0,
-                'post_form': 'True'
-            }
+        """
+        Upload 1 video to OK.ru and return video ID
+        :param session: aiohttp.ClientSession object
+        :param video_path: Path to video
+        :param video_name: Name of video (optional)
+        :return: ID of successfully uploaded video
+        """
+        params = {
+            'application_key': self.application_key,
+            'access_token': self.access_token,
+            'method': 'video.getUploadUrl',
+            'gid': self.group_id,
+            'file_size': 0,
+            'post_form': 'True'
+        }
 
+        if video_name:
+            params['file_name'] = video_name
+
+        try:
             async with session.get(self.api_url, params=params) as response:
                 upload_data = await response.json()
                 if 'error' in upload_data:
@@ -208,7 +224,6 @@ class OkSender(Sender):
 
         except Exception as e:
             exception_text = f"Проблема отправки видео в OK.ru: {str(e)}"
-            print(exception_text)
             self._concat_result(exception_text)
 
             return None
