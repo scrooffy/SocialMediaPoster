@@ -43,7 +43,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
-        create_tg, create_vk, create_ok, create_hf = (False, False, False, False)
+        create_tg, create_vk, create_ok, create_max, create_hf = (False, False, False, False, False)
         with open(settings_path, encoding='utf_8_sig') as f:
             try:
                 smp_settings = json.load(f)
@@ -66,17 +66,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 'application_secret_key' in smp_settings['ok'],
                 'group_id' in smp_settings['ok']))
 
+            create_max = 'max' in smp_settings and all((
+                'token' in smp_settings['max'],
+                'chat_id' in smp_settings['max']))
+
             create_hf = 'hf' in smp_settings and all((
                 'token' in smp_settings['hf'],
                 'model' in smp_settings['hf'],
                 'system_prompt' in smp_settings['hf']))
 
         try:
-            self.poster = SocialMediaPoster(telegram=create_tg, vk=create_vk, ok=create_ok, settings=smp_settings)
+            self.poster = SocialMediaPoster(telegram=create_tg, vk=create_vk, ok=create_ok,
+                                            max_msgr=create_max, settings=smp_settings
+                                            )
         except TokenValidationError:
             create_tg = False
-            self.poster = SocialMediaPoster(telegram=create_tg, vk=create_vk, ok=create_ok, settings=smp_settings)
-
+            self.poster = SocialMediaPoster(telegram=create_tg, vk=create_vk, ok=create_ok,
+                                            max_msgr=create_max, settings=smp_settings
+                                            )
         if not create_tg:
             self.telegram_checkbox.setEnabled(False)
             self.telegram_checkbox.setChecked(False)
@@ -95,6 +102,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             ok_font = self.ok_checkbox.font()
             ok_font.setStrikeOut(True)
             self.ok_checkbox.setFont(ok_font)
+        if not create_max:
+            self.max_checkbox.setEnabled(False)
+            self.max_checkbox.setChecked(False)
+            max_font = self.max_checkbox.font()
+            max_font.setStrikeOut(True)
+            self.max_checkbox.setFont(max_font)
         if create_hf:
             self.hf_inference = HfHandler(smp_settings['hf'])
             self.add_emojis_button.clicked.connect(self.add_emojis_and_tags)
@@ -106,7 +119,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         if not create_vk and not create_ok:
             self.make_repost_button.setEnabled(False)
-            if not create_tg:
+            if not create_tg and not create_max:
                 self.send_button.setEnabled(False)
 
         self.images_file_dialog.clicked.connect(self.open_file_dialog)
@@ -156,8 +169,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         to_telegram = self.telegram_checkbox.isChecked() if not self.delayed_post_check.isChecked() else False
         to_vk = self.vk_checkbox.isChecked()
         to_ok = self.ok_checkbox.isChecked()
+        to_max = self.max_checkbox.isChecked() if not self.delayed_post_check.isChecked() else False
 
-        await self.poster.send_article(telegram=to_telegram, vk=to_vk, ok=to_ok,
+        await self.poster.send_article(telegram=to_telegram, vk=to_vk, ok=to_ok, max_msgr=to_max,
                                        title=title, text=text, files=files, date=delayed_post_date)
         await self.view_results(header='Результат отправки')
 
@@ -230,6 +244,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             results.append(self.poster.vk.result)
         if hasattr(self.poster, 'ok') and self.poster.ok.result:
             results.append(self.poster.ok.result)
+        if hasattr(self.poster, 'max_msgr') and self.poster.max_msgr.result:
+            results.append(self.poster.max_msgr.result)
 
         return results
 
@@ -303,10 +319,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if self.delayed_post_check.isChecked():
             self.delayed_time.setEnabled(True)
             self.telegram_checkbox.setEnabled(False)
+            self.max_checkbox.setEnabled(False)
         else:
             self.delayed_time.setEnabled(False)
-            if hasattr(self.poster, 'tg'):
+            if self.poster.tg is not None:
                 self.telegram_checkbox.setEnabled(True)
+            if self.poster.max_msgr is not None:
+                self.max_checkbox.setEnabled(True)
 
     def get_timestamp(self) -> float:
         return self.delayed_time.dateTime().toPython().timestamp()
