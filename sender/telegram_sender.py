@@ -8,42 +8,6 @@ from aiogram.utils.media_group import MediaGroupBuilder
 
 from .sender import Sender
 
-
-def _split_into_chunks(text: str, chunk_size:int=4096) -> list:
-    """
-    Splits input text into semantically meaningful chunks of specified maximum size.
-    :param text: Input string to be split into chunks.
-    :param chunk_size: Maximum character length of each chunk (default: 4096).
-    :return: List of text chunks
-    """
-    sentences = re.split(r'(?<=[.!?])\s+', text)
-
-    blocks = []
-    current_block = ''
-
-    for sentence in sentences:
-        if len(current_block) + len(sentence) + 1 <= chunk_size:
-            if sentence + '\n\n' in text:
-                current_block += sentence + '\n\n'
-            elif sentence + '\n' in text:
-                current_block += sentence + '\n'
-            else:
-                current_block += sentence + ' '
-        else:
-            blocks.append(current_block.strip())
-            if sentence + '\n\n' in text:
-                current_block = sentence + '\n\n'
-            elif sentence + '\n' in text:
-                current_block = sentence + '\n'
-            else:
-                current_block = sentence + ' '
-
-    if current_block:
-        blocks.append(current_block.strip())
-
-    return blocks
-
-
 class TelegramSender(Sender):
     def __init__(self, token=None, chat_id=None, group_name=None):
         self.token = token
@@ -134,7 +98,7 @@ class TelegramSender(Sender):
                 msg = await self.bot.send_message(self.chat_id, article, parse_mode='HTML')
             if is_long_read:
                 # If article bigger then 4096 chars (or value of chunk_size), separate them to several messages
-                articles = _split_into_chunks(text, chunk_size=4000)
+                articles = self._split_into_chunks(text, chunk_size=4000)
                 articles[0] = processed_title + articles[0]
                 msg = await self.bot.send_message(self.chat_id, articles[0], parse_mode='HTML')
                 msg_id, previous_message_id = [msg.message_id] * 2  # The same values for both variables
@@ -211,6 +175,9 @@ class TelegramSender(Sender):
                 self.result += f"Video upload error {video}: {e}\n"
 
         return files_count, curr_group
+
+    def _split_into_chunks(self, text: str, chunk_size: int = 4096) -> list:
+        return super()._split_into_chunks(text=text, chunk_size=chunk_size)
 
     async def _get_links(self, message) -> tuple:
         """
