@@ -4,7 +4,7 @@
     <img alt="UI" height="501" src="images/screenshot.png" width="400"/>
 </div>
 
-Simple software for creating an article and sending it to Telegram channel, vk.com and ok.ru groups.  
+Simple software for creating an article and sending it to Telegram and MAX channels, vk.com and ok.ru groups.  
 
 **Features**
  - Asynchronous
@@ -67,13 +67,17 @@ For the application to work properly, you need to add api tokens and other setti
     "application_secret_key": "",  
     "session_secret_key": "do not need",  
     "group_id": ""  
-  }  
+  },
+  "max": {
+    "token": "",
+    "chat_id": ""
+  }	
 }
 ```
 ### Telegram
 
  1. [Create a bot](https://core.telegram.org/bots/features#creating-a-new-bot) and copy token to `bot_token` field
- 2. Add new bot to your channel
+ 2. Add new bot to your channel as admin
  3. Find the channel ID (maybe [this bot](https://t.me/username_to_id_bot) will help) and copy it to `chat_id` field
  4. Copy nickname of channel to `group_name` without @
 
@@ -103,6 +107,11 @@ For the application to work properly, you need to add api tokens and other setti
 4. Add application secret key to `application_secret_key`
 5. You can add session secret key to `session_secret_key`, but it doesn't need to work
 6. Copy ID of group in link like `https://ok.ru/group/<group_id>` and copy to `group_id` field
+
+### MAX
+1. [Create a bot](https://dev.max.ru/docs/chatbots/bots-create) and copy token to `token` field
+2. Add new bot to your channel as admin
+3. Go to MAX [web version](https://web.max.ru/), click on your channel and extract `chat_id` from link like `https://web.max.ru/<chat_id>` from browser and copy to `chat_id` field 
 
 *Deleloped for "Призыв" newspaper*
 
