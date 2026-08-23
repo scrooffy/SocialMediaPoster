@@ -117,7 +117,7 @@ class OkSender(Sender):
         try:
             async with session.post(self.api_url, data=params) as response:
                 result = await response.text('utf-8')
-                if 'error' in result:
+                if 'error_code' in result:
                     error_msg = json.loads(result)['error_msg']
                     raise Exception(error_msg)
 
@@ -149,7 +149,7 @@ class OkSender(Sender):
 
             async with session.get(self.api_url, params=params) as resp:
                 result = await resp.json()
-                if 'error' in result:
+                if 'error_code' in result:
                     raise Exception(f"GetUploadUrl error: {result['error_msg']}")
 
                 upload_url = result['upload_url']
@@ -200,16 +200,14 @@ class OkSender(Sender):
             'method': 'video.getUploadUrl',
             'gid': self.group_id,
             'file_size': 0,
+            'file_name': video_name if video_name else 'Видео',
             'post_form': 'True'
         }
-
-        if video_name:
-            params['file_name'] = video_name
 
         try:
             async with session.get(self.api_url, params=params) as response:
                 upload_data = await response.json()
-                if 'error' in upload_data:
+                if 'error_code' in upload_data:
                     raise Exception(f"Error getting video upload URL: {upload_data['error_msg']}")
 
                 upload_url = upload_data['upload_url']
