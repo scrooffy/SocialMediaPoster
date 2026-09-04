@@ -40,7 +40,7 @@ class VkSender(Sender):
         article = f'{title}\n\n{text}' if title else text
         attachments = []
 
-        async with aiohttp.ClientSession(trust_env=True) as session:
+        async with aiohttp.ClientSession(trust_env=True, timeout=aiohttp.ClientTimeout(total=300)) as session:
             video_name = title if title else None
             photos, videos, attachments = await self._upload_media(photos, videos, attachments, session, video_name)
 
@@ -81,7 +81,7 @@ class VkSender(Sender):
         self.result = ''
         obj =  link.split(sep='/')[-1]  # extract from link string like "wall-1337_228"
 
-        async with aiohttp.ClientSession(trust_env=True) as session:
+        async with aiohttp.ClientSession(trust_env=True, timeout=aiohttp.ClientTimeout(total=300)) as session:
             url = f'https://api.vk.ru/method/wall.repost'
             params = {
                 'object': obj,
@@ -124,7 +124,7 @@ class VkSender(Sender):
 
     async def _upload_media(
             self, pics: list, vids: list, attachmnts: list,
-            session: aiohttp.ClientSession, video_name:str = None
+            session: aiohttp.ClientSession, video_name: str = None
     ) -> tuple:
         """
         Determines the order in which photos and videos are loaded
@@ -176,43 +176,58 @@ class VkSender(Sender):
         :return: List of id's of successfully uploaded photos
         """
         attachments = []
-        upload_url = f'https://api.vk.ru/method/photos.getWallUploadServer'
+
+        get_url = f'https://api.vk.ru/method/photos.getWallUploadServer'
         params = {
             'group_id': self.group_id,
             'access_token': self.token,
             'v': '5.131'
         }
 
-        try:
-            async with session.get(upload_url, params=params, ssl=False) as response:
-                data = await response.json()
-                if 'error' in data:
-                    raise Exception(f'Ошибка получения URL для загрузки фото {data["error"]["error_msg"]}')
-                else:
+        # VK's getWallUploadServer upload_url is single-use, so each photo (and each
+        # retry attempt) needs its own fresh URL.
+        for index, photo in enumerate(photos, 1):
+            upload_data = await self._upload_photo_with_retry(photo, get_url, params, session)
+            if upload_data:
+                attach = await self._save_photo(upload_data, session)
+                if attach:
+                    attachments.append(attach)
+
+            if index < len(photos):
+                await asyncio.sleep(1)
+
+        return attachments
+
+    async def _upload_photo_with_retry(self, photo: str, get_url: str, params: dict, session: aiohttp.ClientSession) -> dict:
+        """
+        Uploads a photo to VK, fetching a fresh single-use upload URL per attempt.
+        :param photo: Path to photo
+        :param get_url: URL of photos.getWallUploadServer method
+        :param params: Request parameters for getWallUploadServer
+        :param session: aiohttp.ClientSession object
+        :return: Upload data for photos.saveWallPhoto, or {} on failure
+        """
+        last_error = None
+        max_attempts = 3
+        for attempt in range(1, max_attempts + 1):
+            try:
+                async with session.get(get_url, params=params, ssl=False) as response:
+                    data = await response.json()
+                    if 'error' in data:
+                        raise Exception(f'Ошибка получения URL для загрузки фото {data["error"]["error_msg"]}')
                     upload_url = data['response']['upload_url']
 
-            # Splitting all photos into batches for avoid "Too many requests" error
-            batch_size = 5
-            photo_batches = [photos[i:i + batch_size] for i in range(0, len(photos), batch_size)]
-            for batch_index, batch in enumerate(photo_batches, 1):
-                upload_tasks = [self._upload_photo_to_server(p, upload_url, session) for p in batch]
-                upload_results = await asyncio.gather(*upload_tasks)
+                upload_data = await self._upload_photo_to_server(photo, upload_url, session)
+                if not upload_data.get('photo'):
+                    raise Exception(f'VK не вернул photo (ответ: {upload_data})')
+                return upload_data
+            except Exception as e:
+                last_error = e
+                if attempt < max_attempts:
+                    await asyncio.sleep(attempt)
 
-                for result in upload_results:
-                    if not result:
-                        continue
-                    attach = await self._save_photo(result, session)
-                    if attach:
-                        attachments.append(attach)
-
-                if batch_index < len(photo_batches):
-                    await asyncio.sleep(1)
-
-            return attachments
-
-        except Exception as e:
-            self.result += f'Проблема отправки фото в VK: {str(e)}\n'
-            return []
+        self.result += f'Проблема загрузки фото в VK: "{photo}": {str(last_error)}\n'
+        return {}
 
     async def _upload_photo_to_server(self, photo: str, upload_url: str, session: aiohttp.ClientSession) -> dict:
         """
@@ -222,31 +237,26 @@ class VkSender(Sender):
         :param session: aiohttp.ClientSession object
         :return: Data for later saving by self._save_photo method
         """
-        try:
-            form = aiohttp.FormData()
-            async with aiofiles.open(photo, 'rb') as f:
-                mime_type, _ = mimetypes.guess_type(photo)
-                if mime_type is None:
-                    mime_type = 'application/octet-stream'
+        mime_type, _ = mimetypes.guess_type(photo)
+        if mime_type is None:
+            mime_type = 'multipart/form-data'
+            # mime_type = 'application/octet-stream'
 
-                form.add_field(
-                    'photo',
-                    await f.read(),
-                    filename=os.path.basename(photo),
-                    content_type=mime_type
-                )
+        async with aiofiles.open(photo, 'rb') as f:
+            photo_bytes = await f.read()
 
-            async with session.post(upload_url, data=form, ssl=False) as response:
-                text = await response.text()
+        form = aiohttp.FormData()
+        form.add_field(
+            'photo',
+            photo_bytes,
+            filename=os.path.basename(photo),
+            content_type=mime_type
+        )
 
-            data = json.loads(text)
-            if 'photo' not in data:
-                raise Exception(f"photo undefined (ответ: {data})")
+        async with session.post(upload_url, data=form, ssl=False) as response:
+            text = await response.text()
 
-            return data
-        except Exception as e:
-            self.result += f'Проблема загрузки фото в VK: "{photo}": {str(e)}\n'
-            return {}
+        return json.loads(text)
 
     async def _save_photo(self, upload_data: dict, session: aiohttp.ClientSession) -> str | None:
         """
@@ -256,6 +266,11 @@ class VkSender(Sender):
         :return: ID of saved photo
         """
         try:
+            required_fields = ('photo', 'server', 'hash')
+            missing = [field for field in required_fields if field not in upload_data]
+            if missing:
+                raise Exception(f'VK не вернул обязательные поля {missing}: {upload_data}')
+
             save_url = 'https://api.vk.ru/method/photos.saveWallPhoto'
             params = {
                 'group_id': self.group_id,

@@ -1,5 +1,6 @@
 import os
 import json
+import mimetypes
 
 import aiohttp
 import asyncio
@@ -8,6 +9,10 @@ from .vk_sender import VkSender
 from .telegram_sender import TelegramSender
 from .ok_sender import OkSender
 from .max_sender import MaxSender
+
+
+class FileValidationError(ValueError):
+    """Raised when attached media files fail validation before sending."""
 
 
 class SocialMediaPoster:
@@ -74,15 +79,16 @@ class SocialMediaPoster:
 
         photos, videos = self.separate_files(files) if files else (None, None)
 
+        validation_errors = self._validate_media(photos, videos)
+        if validation_errors:
+            raise FileValidationError('\n'.join(validation_errors))
+
         for social_media in send_to:
             gathering_list.append(
                 social_media(text=text, title=title, photos=photos, videos=videos, delayed_post_date=date)
             )
 
-        async with aiohttp.ClientSession() as session:
-            await asyncio.gather(*gathering_list)
-
-        await session.close()
+        await asyncio.gather(*gathering_list)
 
     async def do_repost(self, vk_link: str = None, ok_link: str = None) -> None:
         """
@@ -101,10 +107,7 @@ class SocialMediaPoster:
         for social_media, link in repost_to:
             gathering_list.append(social_media(link=link))
 
-        async with aiohttp.ClientSession() as session:
-            await asyncio.gather(*gathering_list)
-
-        await session.close()
+        await asyncio.gather(*gathering_list)
 
     def separate_files(self, files: list = None) -> tuple:
         """
@@ -126,6 +129,50 @@ class SocialMediaPoster:
                 videos.append(file)
 
         return photos, videos
+
+    @staticmethod
+    def _validate_file(file: str, expected_prefix: str) -> tuple[bool, str | None]:
+        """
+        Checks that the file exists, is readable, non-empty and has a MIME type
+        starting with `expected_prefix`.
+        :param file: Path to the file
+        :param expected_prefix: Expected MIME prefix, e.g. 'image/' or 'video/'
+        :return: (is_valid, error_message_or_None)
+        """
+        if not os.path.isfile(file):
+            return False, 'файл не найден'
+        if not os.access(file, os.R_OK):
+            return False, 'файл недоступен для чтения'
+        if os.path.getsize(file) == 0:
+            return False, 'файл пустой'
+        mime_type, _ = mimetypes.guess_type(file)
+        if mime_type is None or not mime_type.startswith(expected_prefix):
+            return False, f'некорректный тип файла ({mime_type})'
+        return True, None
+
+    @classmethod
+    def _validate_photo(cls, photo: str) -> tuple[bool, str | None]:
+        return cls._validate_file(photo, 'image/')
+
+    @classmethod
+    def _validate_video(cls, video: str) -> tuple[bool, str | None]:
+        return cls._validate_file(video, 'video/')
+
+    @classmethod
+    def _validate_media(cls, photos: list = None, videos: list = None) -> list[str]:
+        """
+        Validates all photos and videos, returning collected error messages.
+        :param photos: List of photo paths
+        :param videos: List of video paths
+        :return: List of error messages (one per invalid file)
+        """
+        errors = []
+        for media, validator in ((photos, cls._validate_photo), (videos, cls._validate_video)):
+            for file in media or []:
+                is_valid, error = validator(file)
+                if not is_valid:
+                    errors.append(f'Проблема загрузки файла: "{file}": {error}')
+        return errors
 
 
 async def main():

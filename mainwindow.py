@@ -17,7 +17,7 @@ from aiogram.utils.token import TokenValidationError
 #     pyside2-uic form.ui -o ui_form.py
 from uis.ui_form import Ui_MainWindow
 
-from sender.social_media_poster import SocialMediaPoster
+from sender.social_media_poster import SocialMediaPoster, FileValidationError
 from hf_handler import HfHandler
 from repost_window import RepostWindow
 
@@ -76,14 +76,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 'system_prompt' in smp_settings['hf']))
 
         try:
-            self.poster = SocialMediaPoster(telegram=create_tg, vk=create_vk, ok=create_ok,
-                                            max_msgr=create_max, settings=smp_settings
-                                            )
+            self.poster = SocialMediaPoster(
+                telegram=create_tg, vk=create_vk, ok=create_ok,
+                max_msgr=create_max, settings=smp_settings
+            )
         except TokenValidationError:
             create_tg = False
-            self.poster = SocialMediaPoster(telegram=create_tg, vk=create_vk, ok=create_ok,
-                                            max_msgr=create_max, settings=smp_settings
-                                            )
+            self.poster = SocialMediaPoster(
+                telegram=create_tg, vk=create_vk, ok=create_ok,
+                max_msgr=create_max, settings=smp_settings
+            )
         if not create_tg:
             self.telegram_checkbox.setEnabled(False)
             self.telegram_checkbox.setChecked(False)
@@ -171,8 +173,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         to_ok = self.ok_checkbox.isChecked()
         to_max = self.max_checkbox.isChecked() if not self.delayed_post_check.isChecked() else False
 
-        await self.poster.send_article(telegram=to_telegram, vk=to_vk, ok=to_ok, max_msgr=to_max,
-                                       title=title, text=text, files=files, date=delayed_post_date)
+        try:
+            await self.poster.send_article(telegram=to_telegram, vk=to_vk, ok=to_ok, max_msgr=to_max,
+                                           title=title, text=text, files=files, date=delayed_post_date)
+        except FileValidationError as e:
+            await self.error_window(str(e))
+            self.send_button.setEnabled(True)
+            self.send_button.setText('Отправить')
+            return
+
         await self.view_results(header='Результат отправки')
 
         self.send_button.setEnabled(True)
